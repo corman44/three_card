@@ -1,62 +1,120 @@
-use bevy::{prelude::*, window::PrimaryWindow};
-
 pub mod game;
 
-pub const HELLO_WORLD_STYLE: Style = {
-    let mut style = Style::DEFAULT;
-    style.flex_direction = FlexDirection::Column;
-    style.justify_content = JustifyContent::Center;
-    style.align_items = AlignItems::Center;
-    style.border = UiRect::all(Val::Px(1.));
-    style.width = Val::Percent(100.0);
-    style.height = Val::Percent(100.0);
-    style.row_gap = Val::Px(50.0);
-    style.column_gap = Val::Px(50.0);
-    style
-};
+use bevy::{prelude::*, render::camera::ScalingMode, utils::HashMap};
+use bevy_ggrs::{AddRollbackCommandExtension, LocalInputs, LocalPlayers, PlayerInputs};
+use game::networking::systems::Config;
 
+const INPUT_UP: u8 = 1 << 0;
+const INPUT_DOWN: u8 = 1 << 1;
+const INPUT_LEFT: u8 = 1 << 2;
+const INPUT_RIGHT: u8 = 1 << 3;
+const INPUT_FIRE: u8 = 1 << 4;
 
-pub fn spawn_hello_world(
-    asset_server: Res<AssetServer>,
+pub fn setup(
     mut commands: Commands,
-    window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    let window = window_query.get_single().expect("Error getting current window");
-    commands.spawn(
-        Camera2dBundle {
-            // transform: Transform::from_xyz(window.width()/2., window.height()/2., 0.0),
-            ..default()
-        });
-
-    commands.spawn(
-        NodeBundle {
-            style: HELLO_WORLD_STYLE,
-            border_color: Color::RED.into(),
-            ..default()
-        }).with_children(|parent|{
-            parent.spawn(
-            TextBundle {
-                text: Text {
-                    sections: vec![
-                        TextSection::new(
-                            "Hello World!",
-                            get_hello_textstyle(&asset_server),
-                        )
-                    ],
-                    ..default()
-                },
-                ..default()
-            });
-        }
-    );
+    let mut camer_bundle = Camera2dBundle::default();
+    camer_bundle.projection.scaling_mode = ScalingMode::FixedVertical(10.);
+    commands.spawn(camer_bundle);
 }
 
-pub fn get_hello_textstyle(
-    asset_server: &Res<AssetServer>,
-) -> TextStyle {
-    TextStyle {
-        font_size: 64.0,
-        color: Color::WHITE,
-        ..default()
+pub fn spawn_players(
+    mut commands: Commands,
+) {
+    commands.spawn((
+        Player {handle:0},
+        SpriteBundle {
+            transform: Transform::from_translation(Vec3::new(-2., 0., 0.)),
+            sprite: Sprite {
+                color: Color::rgb(0., 0.47, 1.),
+                custom_size: Some(Vec2::new(1., 1.)),
+                ..default()
+            },
+            ..default()
+        }
+    ))
+    .add_rollback();
+
+    commands.spawn((
+        Player {handle:1},
+        SpriteBundle {
+            transform: Transform::from_translation(Vec3::new(2., 0., 0.)),
+            sprite: Sprite {
+                color: Color::rgb(0., 0.4, 0.),
+                custom_size: Some(Vec2::new(1., 1.)),
+                ..default()
+            },
+            ..default()
+        }
+    ))
+    .add_rollback();
+}
+
+pub fn move_players(
+    mut players: Query<(&mut Transform, &Player)>,
+    inputs: Res<PlayerInputs<Config>>,
+    time: Res<Time>,
+) {
+    for (mut transform, player) in &mut players {
+        let (input, _) = inputs[player.handle];
+
+        let mut direction = Vec2::ZERO;
+
+        if input & INPUT_UP != 0 {
+            direction.y += 1.;
+        }
+        if input & INPUT_DOWN != 0 {
+            direction.y -= 1.;
+        }
+        if input & INPUT_RIGHT != 0 {
+            direction.x += 1.;
+        }
+        if input & INPUT_LEFT != 0 {
+            direction.x -= 1.;
+        }
+        if direction == Vec2::ZERO {
+            continue;
+        }
+
+        let move_speed = 7.;
+        let move_delta = direction * move_speed * time.delta_seconds();
+        transform.translation += move_delta.extend(0.);
     }
+}
+
+pub fn read_local_inputs(
+    mut commands: Commands,
+    keys: Res<ButtonInput<KeyCode>>,
+    local_players: Res<LocalPlayers>,
+) {
+    let mut local_inputs = HashMap::new();
+
+    for handle in &local_players.0 {
+        let mut input = 0u8;
+
+        if keys.any_pressed([KeyCode::ArrowUp, KeyCode::KeyW]) {
+            input |= INPUT_UP;
+        }
+        if keys.any_pressed([KeyCode::ArrowDown, KeyCode::KeyS]) {
+            input |= INPUT_DOWN;
+        }
+        if keys.any_pressed([KeyCode::ArrowLeft, KeyCode::KeyA]) {
+            input |= INPUT_LEFT
+        }
+        if keys.any_pressed([KeyCode::ArrowRight, KeyCode::KeyD]) {
+            input |= INPUT_RIGHT;
+        }
+        if keys.any_pressed([KeyCode::Space, KeyCode::Enter]) {
+            input |= INPUT_FIRE;
+        }
+
+        local_inputs.insert(*handle, input);
+    }
+
+    commands.insert_resource(LocalInputs::<Config>(local_inputs));
+}
+
+#[derive(Component)]
+pub struct Player {
+    handle: usize
 }
