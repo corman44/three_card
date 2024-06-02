@@ -1,9 +1,8 @@
-use bevy::{prelude::*, render::camera::ScalingMode, tasks::IoTaskPool};
+use bevy::prelude::*;
 use bevy_ggrs::*;
-use bevy_matchbox::{matchbox_socket::{self, SingleChannel}, MatchboxSocket};
-use matchbox_socket::{WebRtcSocket, PeerId};
+use bevy_matchbox::{matchbox_socket::SingleChannel, MatchboxSocket};
 
-pub type Config = bevy_ggrs::GgrsConfig<u8, PeerId>;
+use crate::Config;
 
 pub fn start_matchbox_socket(
     mut commands: Commands,

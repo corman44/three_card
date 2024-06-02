@@ -5186,6 +5186,7 @@ dependencies = [
  "bevy_matchbox",
  "bevy_roll_safe",
  "clap",
+ "log",
  "rand",
  "rand_xoshiro",
 ]

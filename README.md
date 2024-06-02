@@ -28,3 +28,10 @@ When the deck is empty and players have no cards in their hands, they must play 
 - Bevy Game Engine: https://bevyengine.org/
 - Matchbox WebRTC WASM Networking: https://github.com/johanhelsing/matchbox
 - 
+
+### Client Signaling
+
+- Number of deck cards picked up uint: [u2]
+- Card values played uint: [u4, u4, u4, u4]
+- Pile picked up bool: [u1]
+- UI for Table Cards bool: [u3]
