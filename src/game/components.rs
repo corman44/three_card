@@ -1,26 +1,34 @@
 use bevy::prelude::*;
 
-use crate::CardVal;
+use super::Card;
 
 #[derive(Debug, Component, Default)]
 pub struct Active(pub bool);
 
-#[derive(Debug, Clone, Component, Default)]
-pub struct Card(pub CardVal);
+#[derive(Debug, Clone, Component)]
+pub struct LPTableCards(pub u8);
 
-#[derive(Bundle, Clone, Default)]
+#[derive(Debug, Clone, Component)]
+pub struct LPHandCards(pub u8);
+
+#[derive(Debug, Clone, Component)]
+pub struct RPTableCards;
+
+#[derive(Debug, Clone, Component)]
+pub struct Pile;
+
+#[derive(Debug, Clone, Component)]
+pub struct DeadCards {
+    cards: Option<Vec<Card>>,
+}
+
+#[derive(Bundle, Clone)]
 pub struct CardBundle {
     card: Card,
     sprite: SpriteBundle,
 }
 
-#[derive(Bundle, Default)]
-pub struct UICardBundle {
-    active: Active,
-    card_bundle: CardBundle,
-}
-
-#[derive(Component, Default)]
+#[derive(Component, Clone, Default, Debug)]
 pub struct Player {
     pub facedown_cards: Option<Vec<Card>>,
     pub faceup_cards: Option<Vec<Card>>,

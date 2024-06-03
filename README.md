@@ -35,3 +35,7 @@ When the deck is empty and players have no cards in their hands, they must play 
 - Card values played uint: [u4, u4, u4, u4]
 - Pile picked up bool: [u1]
 - UI for Table Cards bool: [u3]
+
+### Startup Process
+
+1. Initialize States, Resources, Rollback

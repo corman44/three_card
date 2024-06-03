@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_ggrs::*;
 use bevy_matchbox::{matchbox_socket::SingleChannel, MatchboxSocket};
 
-use crate::Config;
+use crate::{AppState, Config};
 
 pub fn start_matchbox_socket(
     mut commands: Commands,
@@ -15,6 +15,7 @@ pub fn start_matchbox_socket(
 pub fn wait_for_players(
     mut commands: Commands,
     mut socket: ResMut<MatchboxSocket<SingleChannel>>,
+    mut next_matchmaking_state: ResMut<NextState<AppState>>,
 ) {
     if socket.get_channel(0).is_err() {
         // info!("socket error: {:?}", socket);
@@ -46,5 +47,6 @@ pub fn wait_for_players(
         .expect("failed to start session..");
 
     commands.insert_resource(bevy_ggrs::Session::P2P(ggrs_session));
+    next_matchmaking_state.set(AppState::PlayersMatched);
 }
 
