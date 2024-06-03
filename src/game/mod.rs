@@ -4,7 +4,7 @@ pub mod systems;
 use bevy::prelude::*;
 use rand::thread_rng;
 use rand::seq::SliceRandom;
-use systems::{deal_cards, display_table_cards, setup_cards};
+use systems::{deal_cards, display_table_cards, print_local_player, setup_cards};
 
 use crate::AppState;
 
@@ -17,7 +17,7 @@ impl Plugin for GamePlugin {
             .init_state::<DeckState>()
             .add_systems(OnEnter(AppState::PlayersMatched), setup_cards)
             .add_systems(OnEnter(AppState::GameStart), deal_cards)
-            .add_systems(OnEnter(DeckState::Shuffled), display_table_cards)
+            .add_systems(OnEnter(DeckState::Shuffled), (display_table_cards, print_local_player))
             ;
     }
 }

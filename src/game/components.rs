@@ -30,6 +30,7 @@ pub struct CardBundle {
 
 #[derive(Component, Clone, Default, Debug)]
 pub struct Player {
+    pub handle: u8,
     pub facedown_cards: Option<Vec<Card>>,
     pub faceup_cards: Option<Vec<Card>>,
     pub hand: Option<Vec<Card>>,

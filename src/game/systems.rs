@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_ggrs::LocalPlayers;
 
 use crate::AppState;
 
@@ -15,12 +16,18 @@ pub fn setup_cards(
 
     commands.spawn((
         NodeBundle::default(),
-        Player::default(),
+        Player {
+            handle: 0,
+            ..default()
+        },
     ));
 
     commands.spawn((
         NodeBundle::default(),
-        Player::default(),
+        Player {
+            handle: 1,
+            ..default()
+        },
     ));
 
     // Spawn LP Card1
@@ -192,4 +199,12 @@ pub fn card_to_asset(
     let card_asset = format!("{}{}{}",CARD_LOCATION,card_suit,card_num);
     // info!("{card_asset}");
     asset_server.load(card_asset)
+}
+
+pub fn print_local_player(
+    local_players: Res<LocalPlayers>,
+) {
+    for handle in &local_players.0 {
+        info!("LocalPlayer: {handle}");
+    }
 }
