@@ -1,6 +1,6 @@
 use bevy::{prelude::*, window::WindowResolution};
 use bevy_ggrs::{GgrsApp, GgrsPlugin, GgrsSchedule, ReadInputs};
-use three_card::{networking::MyNetworkingPlugin, move_players, read_local_inputs, setup, spawn_players, Config};
+use three_card::{game::GamePlugin, move_players, networking::MyNetworkingPlugin, read_local_inputs, setup, spawn_players, CardDeck, Config};
 
 /*
     Currently based on Matchbox Guide:
@@ -22,6 +22,7 @@ fn main() {
                 }),
                 ..default()
             }),
+            GamePlugin,
             // GgrsPlugin::<Config>::default(),
             // MyNetworkingPlugin,
     ))

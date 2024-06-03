@@ -2,29 +2,18 @@ pub mod components;
 pub mod systems;
 
 use bevy::prelude::*;
+use systems::{add_players, deal_cards};
+
+use crate::{spawn_players, CardDeck};
 
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app;
+        app
+            .init_resource::<CardDeck>()
+            .add_systems(Startup, (spawn_players, add_players))
+            .add_systems(PostStartup, deal_cards)
+            ;
     }
-}
-
-#[derive(Debug, Component, Default)]
-pub struct Active(pub bool);
-
-#[derive(Debug, Clone, Component, Default)]
-pub struct Card;
-
-#[derive(Bundle, Clone, Default)]
-pub struct CardBundle {
-    card: Card,
-    sprite: SpriteBundle,
-}
-
-#[derive(Bundle, Default)]
-pub struct UICardBundle {
-    active: Active,
-    card_bundle: CardBundle,
 }

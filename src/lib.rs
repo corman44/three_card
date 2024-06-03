@@ -14,7 +14,7 @@ const INPUT_FIRE: u8 = 1 << 4;
 
 pub type Config = bevy_ggrs::GgrsConfig<u8, PeerId>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum CardVal {
     Hearts_Ace,
     Hearts_2,
@@ -68,11 +68,20 @@ pub enum CardVal {
     Spades_Jack,
     Spades_Queen,
     Spades_King,
+    #[default]
+    Init,
 }
 
-#[derive(Resource, Debug, Default)]
+#[derive(Resource, Debug)]
 pub struct CardDeck{
-    cards: HashMap<u8, CardVal>
+    pub cards: Vec<CardVal>,
+}
+
+impl Default for CardDeck {
+    fn default() -> Self {
+        // ordered deck of cards
+        Self { cards: vec![CardVal::Hearts_Ace, CardVal::Hearts_2, CardVal::Hearts_3, CardVal::Hearts_4, CardVal::Hearts_5, CardVal::Hearts_6, CardVal::Hearts_7, CardVal::Hearts_8, CardVal::Hearts_9, CardVal::Hearts_10, CardVal::Hearts_Jack, CardVal::Hearts_Queen, CardVal::Hearts_King, CardVal::Diamonds_Ace, CardVal::Diamonds_2, CardVal::Diamonds_3, CardVal::Diamonds_4, CardVal::Diamonds_5, CardVal::Diamonds_6, CardVal::Diamonds_7, CardVal::Diamonds_8, CardVal::Diamonds_9, CardVal::Diamonds_10, CardVal::Diamonds_Jack, CardVal::Diamonds_Queen, CardVal::Diamonds_King, CardVal::Clubs_Ace, CardVal::Clubs_2, CardVal::Clubs_3, CardVal::Clubs_4, CardVal::Clubs_5, CardVal::Clubs_6, CardVal::Clubs_7, CardVal::Clubs_8, CardVal::Clubs_9, CardVal::Clubs_10, CardVal::Clubs_Jack, CardVal::Clubs_Queen, CardVal::Clubs_King, CardVal::Spades_Ace, CardVal::Spades_2, CardVal::Spades_3, CardVal::Spades_4, CardVal::Spades_5, CardVal::Spades_6, CardVal::Spades_7, CardVal::Spades_8, CardVal::Spades_9, CardVal::Spades_10, CardVal::Spades_Jack, CardVal::Spades_Queen, CardVal::Spades_King] }
+    }
 }
 
 #[derive(Debug, Default, States, PartialEq, Eq, Hash, Clone, Copy)]
