@@ -4,6 +4,8 @@ use bevy_matchbox::{matchbox_socket::SingleChannel, MatchboxSocket};
 
 use crate::{AppState, Config};
 
+use super::SessionSeed;
+
 pub fn start_matchbox_socket(
     mut commands: Commands,
 ) {
@@ -18,7 +20,7 @@ pub fn wait_for_players(
     mut next_matchmaking_state: ResMut<NextState<AppState>>,
 ) {
     if socket.get_channel(0).is_err() {
-        // info!("socket error: {:?}", socket);
+        info!("socket error: {:?}", socket);
         return;
     }
 
@@ -28,6 +30,8 @@ pub fn wait_for_players(
     if players.len() < num_players {
         return;
     }
+
+    info!("2 Players Connected :D");
 
     // create GGRS P2P sesh
     let mut session_builder = ggrs::SessionBuilder::<Config>::new()
@@ -45,6 +49,14 @@ pub fn wait_for_players(
     let ggrs_session = session_builder
         .start_p2p_session(channel)
         .expect("failed to start session..");
+
+    let id = socket.id().expect("no peer id assigned").0.as_u64_pair();
+    let mut seed = id.0 ^ id.1;
+    for peer in socket.connected_peers() {
+        let peer_id = peer.0.as_u64_pair();
+        seed ^= peer_id.0 ^ peer_id.1;
+    }
+    commands.insert_resource(SessionSeed(seed));
 
     commands.insert_resource(bevy_ggrs::Session::P2P(ggrs_session));
     next_matchmaking_state.set(AppState::PlayersMatched);

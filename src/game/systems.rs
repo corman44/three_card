@@ -1,9 +1,11 @@
+use std::f32::consts::PI;
+
 use bevy::prelude::*;
-use bevy_ggrs::LocalPlayers;
+use bevy_ggrs::{LocalPlayers, PlayerInputs};
 
-use crate::AppState;
+use crate::{networking::SessionSeed, AppState, Config};
 
-use super::{components::{LPHandCards, LPTableCards, Player}, Card, CardDeck, CardVal, DeckState, Suit};
+use super::{components::{Deck, LPHandCards, LPTableCards, Player, RPHandCards, RPTableCards}, Card, CardDeck, CardVal, DeckState, Suit};
 
 pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
@@ -14,6 +16,7 @@ pub fn setup_cards(
     mut next_app_state: ResMut<NextState<AppState>>,
 ) {
 
+    // spawn player1
     commands.spawn((
         NodeBundle::default(),
         Player {
@@ -22,6 +25,8 @@ pub fn setup_cards(
         },
     ));
 
+    
+    // spawn player2
     commands.spawn((
         NodeBundle::default(),
         Player {
@@ -120,6 +125,118 @@ pub fn setup_cards(
         }
     ));
 
+
+    // RP Faceup Card1
+    commands.spawn((
+        RPTableCards(0),
+        SpriteBundle {
+            texture: asset_server.load(r"normal_cards\individual\club\cardClubs_2.png"),
+            transform: Transform {
+                translation: Vec3::new(-80., 35., 1.),
+                scale: Vec3::new(0.022, 0.022, 1.),
+                rotation: Quat::from_rotation_z(PI),
+                ..default()
+            },
+            visibility: Visibility::Hidden,
+            ..default()
+        }
+    ));
+
+    // RP Faceup Card2
+    commands.spawn((
+        RPTableCards(1),
+        SpriteBundle {
+            texture: asset_server.load(r"normal_cards\individual\club\cardClubs_2.png"),
+            transform: Transform {
+                translation: Vec3::new(-70., 35., 1.),
+                scale: Vec3::new(0.022, 0.022, 1.),
+                rotation: Quat::from_rotation_z(PI),
+                ..default()
+            },
+            visibility: Visibility::Hidden,
+            ..default()
+        }
+    ));
+
+    // RP Faceup Card3
+    commands.spawn((
+        RPTableCards(2),
+        SpriteBundle {
+            texture: asset_server.load(r"normal_cards\individual\club\cardClubs_2.png"),
+            transform: Transform {
+                translation: Vec3::new(-60., 35., 1.),
+                scale: Vec3::new(0.022, 0.022, 1.),
+                rotation: Quat::from_rotation_z(PI),
+                ..default()
+            },
+            visibility: Visibility::Hidden,
+            ..default()
+        }
+    ));
+
+    // Spawn RP Card1
+    commands.spawn((
+        RPHandCards(0),
+        SpriteBundle {
+            texture: asset_server.load(r"normal_cards\individual\card back\cardBackGreen.png"),
+            transform: Transform {
+                translation: Vec3::new(-15., 35., 1.),
+                scale: Vec3::new(0.03, 0.03, 1.),
+                rotation: Quat::from_rotation_x(PI/8.),
+                ..default()
+            },
+            visibility: Visibility::Visible,
+            ..default()
+        }
+    ));
+
+    // Spawn RP Card2
+    commands.spawn((
+        RPHandCards(1),
+        SpriteBundle {
+            texture: asset_server.load(r"normal_cards\individual\card back\cardBackGreen.png"),
+            transform: Transform {
+                translation: Vec3::new(0., 35., 1.),
+                scale: Vec3::new(0.03, 0.03, 1.),
+                rotation: Quat::from_rotation_x(PI/7.),
+                ..default()
+            },
+            visibility: Visibility::Visible,
+            ..default()
+        }
+    ));
+
+    // Spawn RP Card3
+    commands.spawn((
+        RPHandCards(2),
+        SpriteBundle {
+            texture: asset_server.load(r"normal_cards\individual\card back\cardBackGreen.png"),
+            transform: Transform {
+                translation: Vec3::new(15., 35., 1.),
+                scale: Vec3::new(0.03, 0.03, 1.),
+                rotation: Quat::from_rotation_x(PI/6.),
+                ..default()
+            },
+            visibility: Visibility::Visible,
+            ..default()
+        }
+    ));
+
+    // Spawn Deck Card
+    commands.spawn((
+        Deck,
+        SpriteBundle {
+            texture: asset_server.load(r"normal_cards\individual\card back\cardBackGreen.png"),
+            transform: Transform {
+                translation: Vec3::new(5., 0., 1.),
+                scale: Vec3::new(0.03, 0.03, 1.),
+                ..default()
+            },
+            visibility: Visibility::Visible,
+            ..default()
+        }
+    ));
+
     next_app_state.set(AppState::GameStart);
 }
 
@@ -127,9 +244,10 @@ pub fn deal_cards(
     mut players: Query<&mut Player>,
     mut card_deck: ResMut<CardDeck>,
     mut next_deck_state: ResMut<NextState<DeckState>>,
+    sesh_seed: Res<SessionSeed>,
 ) {
     // first shuffle the deck
-    card_deck.shuffle();
+    card_deck.shuffle(**sesh_seed);
 
     // for each player in the game, deal 3 cards facedown, 3 faceup, 3 to the hand
     for mut player in players.iter_mut() {
@@ -143,12 +261,14 @@ pub fn deal_cards(
 
 pub fn display_table_cards(
     asset_server: Res<AssetServer>,
+    local_players: Res<LocalPlayers>,
     player_query: Query<&Player>,
-    mut lp_tablecards_image_query: Query<(&mut Handle<Image>, &mut Visibility), (With<LPTableCards>, Without<LPHandCards>)>,
-    mut lp_hand_image_query: Query<(&mut Handle<Image>, &mut Visibility), (With<LPHandCards>, Without<LPTableCards>)>,
+    mut lp_tablecards_image_query: Query<(&mut Handle<Image>, &mut Visibility), (With<LPTableCards>, Without<LPHandCards>, Without<RPTableCards>)>,
+    mut lp_hand_image_query: Query<(&mut Handle<Image>, &mut Visibility), (With<LPHandCards>, Without<LPTableCards>, Without<RPTableCards>)>,
+    mut rp_tablecards_image_query: Query<(&mut Handle<Image>, &mut Visibility), (With<RPTableCards>, Without<LPHandCards>, Without<LPTableCards>)>,
 ) {
-    for (player_num, player) in player_query.iter().enumerate() {
-        if player_num == 0 {
+    for player in player_query.iter() {
+        if local_players.0.contains(&player.handle) {
             // show hand
             for (i, (mut image_handle, mut vis)) in lp_hand_image_query.iter_mut().enumerate() {
                 *image_handle = card_to_asset(&asset_server, player.clone().hand.unwrap()[i]);
@@ -161,8 +281,11 @@ pub fn display_table_cards(
                 *vis = Visibility::Visible;
             }
         }
-        else if player_num == 1 {
-
+        else {
+            for (i, (mut image_handle, mut vis)) in rp_tablecards_image_query.iter_mut().enumerate() {
+                *image_handle = card_to_asset(&asset_server, player.clone().faceup_cards.unwrap()[i]);
+                *vis = Visibility::Visible;
+            }
         }
     }
 }
@@ -201,10 +324,23 @@ pub fn card_to_asset(
     asset_server.load(card_asset)
 }
 
-pub fn print_local_player(
+pub fn process_inputs(
     local_players: Res<LocalPlayers>,
+    mut player_query: Query<&mut Player>,
+    inputs: Res<PlayerInputs<Config>>,
 ) {
-    for handle in &local_players.0 {
-        info!("LocalPlayer: {handle}");
+    for player in player_query.iter() {
+        if local_players.0.contains(&player.handle) {
+            // actions are taken the local player
+
+            // TODO: Numbers represent selected cards
+            // TODO: Enter -> check if selected card is possible to play and play them
+            // TODO: T -> add cards from pile to players hand
+            // TODO: P -> add cards from deck until player has 3 (or deck is empty)
+        }
+        else {
+            // actions are for the remote player
+        }
     }
 }
+

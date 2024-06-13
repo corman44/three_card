@@ -2,9 +2,10 @@ pub mod components;
 pub mod systems;
 
 use bevy::prelude::*;
-use rand::thread_rng;
+use rand::SeedableRng;
 use rand::seq::SliceRandom;
-use systems::{deal_cards, display_table_cards, print_local_player, setup_cards};
+use rand_xoshiro::Xoshiro256PlusPlus;
+use systems::{deal_cards, display_table_cards, setup_cards};
 
 use crate::AppState;
 
@@ -17,7 +18,7 @@ impl Plugin for GamePlugin {
             .init_state::<DeckState>()
             .add_systems(OnEnter(AppState::PlayersMatched), setup_cards)
             .add_systems(OnEnter(AppState::GameStart), deal_cards)
-            .add_systems(OnEnter(DeckState::Shuffled), (display_table_cards, print_local_player))
+            .add_systems(OnEnter(DeckState::Shuffled), display_table_cards)
             ;
     }
 }
@@ -89,8 +90,19 @@ impl Default for CardDeck {
 }
 
 impl CardDeck {
-    pub fn shuffle(&mut self) {
-        let mut rng = thread_rng();
+    pub fn shuffle(&mut self, seed: u64) {
+        // let mut rng = thread_rng().next_u64();
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
         self.cards.shuffle(&mut rng);
+    }
+}
+
+#[derive(Clone, Debug, Resource)]
+pub struct PlayerTurn(pub usize);
+
+impl PlayerTurn {
+    // only for 2 player atm
+    pub fn next(mut self) {
+        self.0 = self.0 ^ 1;
     }
 }

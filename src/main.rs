@@ -9,7 +9,10 @@ use three_card::{game::{CardDeck, GamePlugin}, networking::MyNetworkingPlugin, r
 
  */
 
- // TODO: use PeerId's to create a see that used commonly used for RNG across each Client
+// TODO: highlight selected card(s)
+// TODO: only display card change if there is a change (Changed<>)
+// TODO: add player turn notification (Arrow, highlights, or something green)
+// TODO: Iterate over each type of card to display (optimization)
 
 fn main() {
     App::new()
@@ -27,7 +30,7 @@ fn main() {
             MyNetworkingPlugin,
     ))
         // .rollback_component_with_clone::<Transform>()
-        .rollback_resource_with_clone::<CardDeck>()
+        // .rollback_resource_with_clone::<CardDeck>()
         .insert_resource(ClearColor(Color::rgb(0.53, 0.53, 0.53)))
         .init_state::<AppState>()
         .add_systems(Startup, (

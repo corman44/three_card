@@ -12,7 +12,13 @@ pub struct LPTableCards(pub u8);
 pub struct LPHandCards(pub u8);
 
 #[derive(Debug, Clone, Component)]
-pub struct RPTableCards;
+pub struct RPTableCards(pub u8);
+
+#[derive(Debug, Clone, Component)]
+pub struct RPHandCards(pub u8);
+
+#[derive(Debug, Clone, Component)]
+pub struct Deck;
 
 #[derive(Debug, Clone, Component)]
 pub struct Pile;
@@ -30,7 +36,7 @@ pub struct CardBundle {
 
 #[derive(Component, Clone, Default, Debug)]
 pub struct Player {
-    pub handle: u8,
+    pub handle: usize,
     pub facedown_cards: Option<Vec<Card>>,
     pub faceup_cards: Option<Vec<Card>>,
     pub hand: Option<Vec<Card>>,
