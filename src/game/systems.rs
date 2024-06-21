@@ -3,9 +3,9 @@ use std::f32::consts::PI;
 use bevy::prelude::*;
 use bevy_ggrs::{LocalPlayers, PlayerInputs};
 
-use crate::{networking::SessionSeed, AppState, Config};
+use crate::{networking::SessionSeed, AppState, Config, INPUT_ENTER, INPUT_PICKUPDECK, INPUT_PICKUPPILE};
 
-use super::{components::{Deck, LPHandCards, LPTableCards, Player, RPHandCards, RPTableCards}, Card, CardDeck, CardVal, DeckState, Suit};
+use super::{components::{Deck, LPHandCards, LPTableCards, Player, RPHandCards, RPTableCards}, Card, CardDeck, CardVal, DeckState, PlayerTurn, Suit};
 
 pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
@@ -325,22 +325,58 @@ pub fn card_to_asset(
 }
 
 pub fn process_inputs(
-    local_players: Res<LocalPlayers>,
-    mut player_query: Query<&mut Player>,
     inputs: Res<PlayerInputs<Config>>,
+    local_players: Res<LocalPlayers>,
+    mut card_deck: ResMut<CardDeck>,
+    mut player_query: Query<&mut Player>,
+    mut player_turn: ResMut<PlayerTurn>,
 ) {
     for player in player_query.iter() {
-        if local_players.0.contains(&player.handle) {
+        if local_players.0.contains(&player.handle) && (player_turn.0 == player.handle){
             // actions are taken the local player
+            let (input, _id) = inputs.get(player.handle).unwrap();
 
-            // TODO: Numbers represent selected cards
-            // TODO: Enter -> check if selected card is possible to play and play them
-            // TODO: T -> add cards from pile to players hand
-            // TODO: P -> add cards from deck until player has 3 (or deck is empty)
+            // process enter request
+            if (input & INPUT_ENTER != 0) && (input & 0b111111111 > 0) {
+                let mut selected_cards = vec![];
+
+                // check which cards are selected
+                for i in (0..8).into_iter() {
+                    if (1u64 << i) & input > 0 {
+                        selected_cards.push(player.hand.clone().unwrap()[i as usize]);
+                    }
+                }
+                
+                let mut valid_selection = true;
+                let card_num = selected_cards[0].number;
+
+                // check each selected card is same type
+                if selected_cards.len() > 1 {
+                    valid_selection = selected_cards.iter().all(|&num| num.number == card_num);
+                }
+
+                // check if greater than latest deck card
+                if valid_selection && (card_num >= card_deck.cards[card_deck.cards.len()].number){
+                    // TODO: play the selected cards onto the 
+                } else {
+                    // not valid selection
+                    info!("Selected Cards not Valid to play..");
+                }
+
+            }
+
+            // process pickup pile request
+            if input & INPUT_PICKUPPILE > 0 {
+
+            }
+
+            // process pickup deck request
+            if input & INPUT_PICKUPDECK > 0 {
+
+            }
         }
         else {
-            // actions are for the remote player
+            // actions are for a remote player
         }
     }
 }
-

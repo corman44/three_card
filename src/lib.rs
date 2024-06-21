@@ -10,6 +10,7 @@ use bevy_matchbox::matchbox_socket::PeerId;
 //  - number -> selecting card for ready to play (only allow selecting of same value card)
 //  - Enter -> for attempting to play the selected cards
 //  - P -> Pickup cards
+//  - D -> Pickup cards from Deck (up to 3)
 const INPUT_1: u64 = 1 << 0;
 const INPUT_2: u64 = 1 << 1;
 const INPUT_3: u64 = 1 << 2;

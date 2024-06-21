@@ -5,8 +5,7 @@ use bevy::prelude::*;
 use rand::SeedableRng;
 use rand::seq::SliceRandom;
 use rand_xoshiro::Xoshiro256PlusPlus;
-use systems::{deal_cards, display_table_cards, setup_cards};
-
+use systems::{deal_cards, display_table_cards, process_inputs, setup_cards};
 use crate::AppState;
 
 pub struct GamePlugin;
@@ -15,10 +14,12 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app
             .init_resource::<CardDeck>()
+            .init_resource::<PlayerTurn>()
             .init_state::<DeckState>()
             .add_systems(OnEnter(AppState::PlayersMatched), setup_cards)
             .add_systems(OnEnter(AppState::GameStart), deal_cards)
             .add_systems(OnEnter(DeckState::Shuffled), display_table_cards)
+            .add_systems(Update, (process_inputs).run_if(in_state(AppState::Playing)))
             ;
     }
 }
@@ -32,7 +33,7 @@ pub enum DeckState {
     Gameplay,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CardVal {
     Two,
     Three,
@@ -49,7 +50,7 @@ pub enum CardVal {
     Ace,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Suit {
     Club,
     Heart,
@@ -57,7 +58,7 @@ pub enum Suit {
     Spade,
 }
 
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Component, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct  Card {
     number: CardVal,
     suit: Suit,
@@ -99,6 +100,12 @@ impl CardDeck {
 
 #[derive(Clone, Debug, Resource)]
 pub struct PlayerTurn(pub usize);
+
+impl Default for PlayerTurn {
+    fn default() -> Self {
+        Self(0)
+    }
+}
 
 impl PlayerTurn {
     // only for 2 player atm
