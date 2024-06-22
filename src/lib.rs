@@ -66,45 +66,45 @@ pub fn read_local_inputs(
 ) {
     let mut local_inputs = HashMap::new();
 
-    // TODO: convert key presses to mouse clicks of objects
-
+    // TODO: convert key presses to mouse clicks of cards
     for handle in &local_players.0 {
         let mut input = 0u64;
 
-        if keys.pressed(KeyCode::Digit1) {
+        if keys.just_pressed(KeyCode::Digit1) {
             input |= INPUT_1;
+            info!("Input1 just_pressed")
         }
-        if keys.pressed(KeyCode::Digit2) {
+        if keys.just_pressed(KeyCode::Digit2) {
             input |= INPUT_2;
         }
-        if keys.pressed(KeyCode::Digit3) {
+        if keys.just_pressed(KeyCode::Digit3) {
             input |= INPUT_3;
         }
-        if keys.pressed(KeyCode::Digit4) {
+        if keys.just_pressed(KeyCode::Digit4) {
             input |= INPUT_4;
         }
-        if keys.pressed(KeyCode::Digit5) {
+        if keys.just_pressed(KeyCode::Digit5) {
             input |= INPUT_5;
         }
-        if keys.pressed(KeyCode::Digit6) {
+        if keys.just_pressed(KeyCode::Digit6) {
             input |= INPUT_6;
         }
-        if keys.pressed(KeyCode::Digit7) {
+        if keys.just_pressed(KeyCode::Digit7) {
             input |= INPUT_7;
         }
-        if keys.pressed(KeyCode::Digit8) {
+        if keys.just_pressed(KeyCode::Digit8) {
             input |= INPUT_8;
         }
-        if keys.pressed(KeyCode::Digit9) {
+        if keys.just_pressed(KeyCode::Digit9) {
             input |= INPUT_9;
         }
-        if keys.pressed(KeyCode::Enter) {
+        if keys.just_pressed(KeyCode::Enter) {
             input |= INPUT_ENTER;
         }
-        if keys.pressed(KeyCode::KeyP) {
+        if keys.just_pressed(KeyCode::KeyP) {
             input |= INPUT_PICKUPPILE;
         }
-        if keys.pressed(KeyCode::KeyD) {
+        if keys.just_pressed(KeyCode::KeyD) {
             input |= INPUT_PICKUPDECK;
         }
 

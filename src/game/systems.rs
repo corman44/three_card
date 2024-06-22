@@ -333,11 +333,11 @@ pub fn process_inputs(
 ) {
     for player in player_query.iter() {
         if local_players.0.contains(&player.handle) && (player_turn.0 == player.handle){
-            // actions are taken the local player
             let (input, _id) = inputs.get(player.handle).unwrap();
 
             // process enter request
             if (input & INPUT_ENTER != 0) && (input & 0b111111111 > 0) {
+                info!("Enter pressed and input selected: {input:b}");
                 let mut selected_cards = vec![];
 
                 // check which cards are selected
@@ -357,11 +357,13 @@ pub fn process_inputs(
 
                 // check if greater than latest deck card
                 if valid_selection && (card_num >= card_deck.cards[card_deck.cards.len()].number){
-                    // TODO: play the selected cards onto the 
+                    // TODO: play the selected cards onto the pile
                 } else {
                     // not valid selection
                     info!("Selected Cards not Valid to play..");
                 }
+
+                // TODO: end turn (next players turn, clear current input)
 
             }
 

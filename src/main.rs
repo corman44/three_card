@@ -36,6 +36,6 @@ fn main() {
         .add_systems(Startup, (
             setup,
         ))
-        .add_systems(ReadInputs, read_local_inputs)
+        .add_systems(ReadInputs, read_local_inputs.run_if(in_state(AppState::Playing)))
         .run();
 }
