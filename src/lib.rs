@@ -2,7 +2,7 @@ pub mod game;
 pub mod menus;
 pub mod networking;
 
-use bevy::{prelude::*, render::camera::ScalingMode, utils::HashMap,};
+use bevy::{core_pipeline::bloom::Bloom, prelude::*, utils::HashMap};
 use bevy_ggrs::{ LocalInputs, LocalPlayers,};
 use bevy_matchbox::matchbox_socket::PeerId;
 
@@ -40,19 +40,19 @@ pub fn setup(
     mut commands: Commands,
 ) {
     // Spawn Camera
-    let mut camera_bundle = Camera2dBundle::default();
-    camera_bundle.projection.scaling_mode = ScalingMode::FixedVertical(100.);
-    commands.spawn(camera_bundle);
+    commands.spawn((
+        Camera2d,
+        Camera {
+            hdr: true,
+            ..default()
+        },
+        Bloom::NATURAL,
+    ));
 
     // Spawn Background
     commands.spawn(
-        SpriteBundle {
-            texture: asset_server.load(r"Backgrounds\background_1.png").into(),
-            transform: Transform {
-                translation: Vec3::new(0.,0.,0.),
-                scale: Vec3::new(0.4, 0.4, 1.),
-                ..default()
-            },
+        Sprite {
+            image: asset_server.load(r"Backgrounds\background_1.png").into(),
             ..default()
         }
     );

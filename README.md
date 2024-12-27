@@ -27,8 +27,8 @@ When the deck is empty and players have no cards in their hands, they must play 
 # Inner Workings
 
 - Bevy Game Engine: https://bevyengine.org/
-- Matchbox WebRTC WASM Networking: https://github.com/johanhelsing/matchbox
-- 
+- https://github.com/johanhelsing/matchbox
+- https://johanhelsing.studio/posts/extreme-bevy
 
 ### Client Signaling
 

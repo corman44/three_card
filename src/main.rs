@@ -31,7 +31,7 @@ fn main() {
     ))
         // .rollback_component_with_clone::<Transform>()
         // .rollback_resource_with_clone::<CardDeck>()
-        .insert_resource(ClearColor(Color::rgb(0.53, 0.53, 0.53)))
+        .insert_resource(ClearColor(Color::srgb(0.53, 0.53, 0.53)))
         .init_state::<AppState>()
         .add_systems(Startup, (
             setup,

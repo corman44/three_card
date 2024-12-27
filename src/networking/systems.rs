@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_ggrs::*;
-use bevy_matchbox::{matchbox_socket::SingleChannel, MatchboxSocket};
+use bevy_matchbox::MatchboxSocket;
 
 use crate::{AppState, Config};
 
@@ -11,12 +11,12 @@ pub fn start_matchbox_socket(
 ) {
     let room_url = "ws://127.0.0.1:3536/three_card?next=2";
     info!("connecting to matchbox server: {room_url}");
-    commands.insert_resource(MatchboxSocket::new_ggrs(room_url));
+    commands.insert_resource(MatchboxSocket::new_reliable(room_url));
 }
 
 pub fn wait_for_players(
     mut commands: Commands,
-    mut socket: ResMut<MatchboxSocket<SingleChannel>>,
+    mut socket: ResMut<MatchboxSocket>,
     mut next_matchmaking_state: ResMut<NextState<AppState>>,
 ) {
     if socket.get_channel(0).is_err() {
