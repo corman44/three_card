@@ -2,8 +2,8 @@ pub mod components;
 pub mod systems;
 
 use bevy::prelude::*;
-use rand::SeedableRng;
-use rand::seq::SliceRandom;
+use components::{Card, CardGroup};
+use rand::{seq::SliceRandom, SeedableRng};
 use rand_xoshiro::Xoshiro256PlusPlus;
 use systems::{deal_cards, display_table_cards, setup_cards};
 
@@ -32,40 +32,45 @@ pub enum DeckState {
     Gameplay,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CardVal {
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Jack,
-    Queen,
-    King,
-    Ace,
+    Two = 0,
+    Three = 1,
+    Four = 2,
+    Five = 3,
+    Six = 4,
+    Seven = 5,
+    Eight = 6,
+    Nine = 7,
+    Ten = 8,
+    Jack = 9,
+    Queen = 10,
+    King = 12,
+    Ace = 13,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Suit {
     Club,
     Heart,
-    Diamond,
     Spade,
+    Diamond,
 }
 
-#[derive(Component, Debug, Clone, Copy)]
-pub struct  Card {
-    number: CardVal,
-    suit: Suit,
+#[derive(Clone, Copy, Debug)]
+pub enum CardLocation {
+    LPHand,
+    LPFaceUp,
+    RPHand,
+    RPFaceUp,
+    Deck,
+    Dead,
+    Pile,
 }
 
 #[derive(Resource, Debug, Clone)]
 pub struct CardDeck{
-    pub cards: Vec<Card>,
+    pub cards: CardGroup,
 }
 
 impl Default for CardDeck {
@@ -84,7 +89,10 @@ impl Default for CardDeck {
         }
 
         Self {
-            cards: deck
+            cards: CardGroup {
+                cards: deck,
+                location: CardLocation::Deck,
+            }
         }
     }
 }
@@ -93,7 +101,7 @@ impl CardDeck {
     pub fn shuffle(&mut self, seed: u64) {
         // let mut rng = thread_rng().next_u64();
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
-        self.cards.shuffle(&mut rng);
+        self.cards.cards.shuffle(&mut rng);
     }
 }
 

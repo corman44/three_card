@@ -11,7 +11,7 @@ pub fn start_matchbox_socket(
 ) {
     let room_url = "ws://127.0.0.1:3536/three_card?next=2";
     info!("connecting to matchbox server: {room_url}");
-    commands.insert_resource(MatchboxSocket::new_reliable(room_url));
+    commands.insert_resource(MatchboxSocket::new_unreliable(room_url));
 }
 
 pub fn wait_for_players(

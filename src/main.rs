@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_ggrs::{GgrsApp, GgrsPlugin, GgrsSchedule, ReadInputs};
-use three_card::{game::{CardDeck, GamePlugin}, networking::MyNetworkingPlugin, read_local_inputs, setup, AppState, Config};
+use three_card::{game::{components::Card, CardDeck, CardVal, GamePlugin, Suit}, networking::MyNetworkingPlugin, read_local_inputs, setup, AppState, Config};
 
 /*
     Currently based on Matchbox Guide:
@@ -31,6 +31,7 @@ fn main() {
     ))
         // .rollback_component_with_clone::<Transform>()
         // .rollback_resource_with_clone::<CardDeck>()
+        .init_resource::<CardDeck>()
         .insert_resource(ClearColor(Color::srgb(0.53, 0.53, 0.53)))
         .init_state::<AppState>()
         .add_systems(Startup, (
@@ -39,3 +40,42 @@ fn main() {
         .add_systems(ReadInputs, read_local_inputs)
         .run();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn test_ordering() {
+        let mut cards = vec![
+            Card {
+                number: CardVal::Ace,
+                suit: Suit::Club,
+            },
+            Card {
+                number: CardVal::Jack,
+                suit: Suit::Spade,
+            },
+            Card {
+                number: CardVal::Four,
+                suit: Suit::Heart,
+            },
+            Card {
+                number: CardVal::Three,
+                suit: Suit::Diamond,
+            },
+            Card {
+                number: CardVal::Six,
+                suit: Suit::Diamond,
+            },
+            Card {
+                number: CardVal::Ace,
+                suit: Suit::Spade,
+            },
+        ];
+        cards.sort();
+        dbg!(&cards);
+        assert_eq!(43, cards.iter().last().unwrap().to_num());
+    }
+}
+

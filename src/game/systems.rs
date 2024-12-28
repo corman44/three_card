@@ -4,10 +4,11 @@ use bevy_ggrs::{LocalPlayers, PlayerInputs};
 
 use crate::{networking::SessionSeed, AppState, Config};
 
-use super::{components::{Deck, LPHandCards, LPTableCards, Player, RPHandCards, RPTableCards}, Card, CardDeck, CardVal, DeckState, Suit};
+use super::{components::{Card, Deck, LPHandCards, LPTableCards, Player, RPHandCards, RPTableCards}, CardDeck, CardVal, DeckState, Suit};
 
 pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
+pub const CARD_SCALE: f32 = 0.1;
 
 pub fn setup_cards(
     mut commands: Commands,
@@ -39,13 +40,13 @@ pub fn setup_cards(
         // LP Card
         commands.spawn((
             Sprite {
-                image: asset_server.load(r"normal_cards\individual\heart\cardHearts_1.png"),
+                image: asset_server.load(r"normal_cards\individual\heart\cardHearts_2.png"),
                 ..default()
             },
             Visibility::Hidden,
             Transform {
-                translation: Vec3::new(-15. + 5. * idx as f32, -35., 1.),
-                scale: Vec3::new(0.03, 0.03, 1.),
+                translation: Vec3::new(0. + 30. * idx as f32, 0., 1.),
+                scale: Vec3::new(CARD_SCALE, CARD_SCALE, 1.),
                 ..default()
             },
             LPHandCards(idx),
@@ -54,13 +55,13 @@ pub fn setup_cards(
         // LP Faceup
         commands.spawn((
             Sprite {
-                image: asset_server.load(r"normal_cards\individual\heart\cardClubs_2.png"),
+                image: asset_server.load(r"normal_cards\individual\heart\cardHearts_2.png"),
                 ..default()
             },
             Visibility::Hidden,
             Transform {
-                translation: Vec3::new(-15. + 5. * idx as f32, -30., 1.),
-                scale: Vec3::new(0.03, 0.03, 1.),
+                translation: Vec3::new(-155. + 20. * idx as f32, -190., 1.),
+                scale: Vec3::new(CARD_SCALE, CARD_SCALE, 1.),
                 ..default()
             },
             LPTableCards(idx)
@@ -69,13 +70,13 @@ pub fn setup_cards(
         // RP Faceup
         commands.spawn((
             Sprite {
-                image: asset_server.load(r"normal_cards\individual\heart\cardClubs_3.png"),
+                image: asset_server.load(r"normal_cards\individual\heart\cardHearts_2.png"),
                 ..default()
             },
             Visibility::Hidden,
             Transform {
-                translation: Vec3::new(-15. + 5. * idx as f32, 35., 1.),
-                scale: Vec3::new(0.03, 0.03, 1.),
+                translation: Vec3::new(155. + 20. * idx as f32, 200., 1.),
+                scale: Vec3::new(CARD_SCALE, CARD_SCALE, 1.),
                 ..default()
             },
             RPTableCards(idx)
@@ -84,54 +85,6 @@ pub fn setup_cards(
         // RP Card
         commands.spawn(RPHandCards(idx));
     }
-
-    // Spawn RP Card1
-    // commands.spawn((
-    //     RPHandCards(0),
-    //     SpriteBundle {
-    //         texture: asset_server.load(r"normal_cards\individual\card back\cardBackGreen.png"),
-    //         transform: Transform {
-    //             translation: Vec3::new(-15., 35., 1.),
-    //             scale: Vec3::new(0.03, 0.03, 1.),
-    //             rotation: Quat::from_rotation_x(PI/8.),
-    //             ..default()
-    //         },
-    //         visibility: Visibility::Visible,
-    //         ..default()
-    //     }
-    // ));
-
-    // // Spawn RP Card2
-    // commands.spawn((
-    //     RPHandCards(1),
-    //     SpriteBundle {
-    //         texture: asset_server.load(r"normal_cards\individual\card back\cardBackGreen.png"),
-    //         transform: Transform {
-    //             translation: Vec3::new(0., 35., 1.),
-    //             scale: Vec3::new(0.03, 0.03, 1.),
-    //             rotation: Quat::from_rotation_x(PI/7.),
-    //             ..default()
-    //         },
-    //         visibility: Visibility::Visible,
-    //         ..default()
-    //     }
-    // ));
-
-    // // Spawn RP Card3
-    // commands.spawn((
-    //     RPHandCards(2),
-    //     SpriteBundle {
-    //         texture: asset_server.load(r"normal_cards\individual\card back\cardBackGreen.png"),
-    //         transform: Transform {
-    //             translation: Vec3::new(15., 35., 1.),
-    //             scale: Vec3::new(0.03, 0.03, 1.),
-    //             rotation: Quat::from_rotation_x(PI/6.),
-    //             ..default()
-    //         },
-    //         visibility: Visibility::Visible,
-    //         ..default()
-    //     }
-    // ));
 
     // Spawn Deck Card
     commands.spawn((
@@ -158,11 +111,10 @@ pub fn deal_cards(
 
     // for each player in the game, deal 3 cards facedown, 3 faceup, 3 to the hand
     for mut player in players.iter_mut() {
-        player.facedown_cards = Some(vec![card_deck.cards.pop().unwrap(), card_deck.cards.pop().unwrap(), card_deck.cards.pop().unwrap()]);
-        player.faceup_cards = Some(vec![card_deck.cards.pop().unwrap(), card_deck.cards.pop().unwrap(), card_deck.cards.pop().unwrap()]);
-        player.hand = Some(vec![card_deck.cards.pop().unwrap(), card_deck.cards.pop().unwrap(), card_deck.cards.pop().unwrap()]);
+        player.facedown_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
+        player.faceup_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
+        player.hand = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
     }
-    // info!("Cards Dealt: \n{:?}", players.iter().collect::<Vec<&Player>>());
     next_deck_state.set(DeckState::Shuffled);
 }
 
@@ -178,19 +130,19 @@ pub fn display_table_cards(
         if local_players.0.contains(&player.handle) {
             // show hand
             for (i, (mut image_handle, mut vis)) in lp_hand_image_query.iter_mut().enumerate() {
-                *image_handle = card_to_asset(&asset_server, player.clone().hand.unwrap()[i]);
+                *image_handle = card_to_asset(&asset_server, player.clone().hand[i]);
                 *vis = Visibility::Visible;
             }
 
             // show faceup table cards
             for (i, (mut image_handle, mut vis)) in lp_tablecards_image_query.iter_mut().enumerate() {
-                *image_handle = card_to_asset(&asset_server, player.clone().faceup_cards.unwrap()[i]);
+                *image_handle = card_to_asset(&asset_server, player.clone().faceup_cards[i]);
                 *vis = Visibility::Visible;
             }
         }
         else {
             for (i, (mut image_handle, mut vis)) in rp_tablecards_image_query.iter_mut().enumerate() {
-                *image_handle = card_to_asset(&asset_server, player.clone().faceup_cards.unwrap()[i]);
+                *image_handle = card_to_asset(&asset_server, player.clone().faceup_cards[i]);
                 *vis = Visibility::Visible;
             }
         }
@@ -227,7 +179,6 @@ pub fn card_to_asset(
         Suit::Spade => card_suit = r"spade\cardSpades_",
     }
     let card_asset = format!("{}{}{}",CARD_LOCATION,card_suit,card_num);
-    // info!("{card_asset}");
     asset_server.load(card_asset).into()
 }
 
