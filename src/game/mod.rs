@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use components::{Card, CardGroup};
 use rand::{seq::SliceRandom, SeedableRng};
 use rand_xoshiro::Xoshiro256PlusPlus;
-use systems::{deal_cards, display_table_cards, setup_cards};
+use systems::{deal_cards, display_table_cards, setup_cards, short_wait};
 
 use crate::AppState;
 
@@ -17,7 +17,8 @@ impl Plugin for GamePlugin {
             .init_resource::<CardDeck>()
             .init_state::<DeckState>()
             .add_systems(OnEnter(AppState::PlayersMatched), setup_cards)
-            .add_systems(OnEnter(AppState::GameStart), deal_cards)
+            .add_systems(OnEnter(AppState::GameStart), deal_cards.after(short_wait))
+            .add_systems(Update, short_wait.run_if(in_state(DeckState::Ordered)))
             .add_systems(OnEnter(DeckState::Shuffled), display_table_cards)
             ;
     }

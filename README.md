@@ -2,6 +2,11 @@
 
 My Version of Three Card Game written in Rust using Bevy
 
+## Development Update
+
+- View of 2 local clients 2024.12.28
+  ![alt text](image.png)
+
 # Game Rules
 
 Seems similar to this: https://en.wikipedia.org/wiki/Shithead_(card_game)

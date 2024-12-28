@@ -1,7 +1,5 @@
 use std::cmp::Ordering;
-
 use bevy::prelude::*;
-
 use super::{CardLocation, CardVal, Suit};
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,6 +64,11 @@ impl Card {
         out += self.number as u8;
         out
     }
+}
+
+#[derive(Resource)]
+pub struct ShortWait {
+    pub timer: Timer,
 }
 
 #[derive(Debug, Clone)]

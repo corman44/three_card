@@ -4,11 +4,11 @@ use bevy_ggrs::{LocalPlayers, PlayerInputs};
 
 use crate::{networking::SessionSeed, AppState, Config};
 
-use super::{components::{Card, Deck, LPHandCards, LPTableCards, Player, RPHandCards, RPTableCards}, CardDeck, CardVal, DeckState, Suit};
+use super::{components::{Card, Deck, LPHandCards, LPTableCards, Player, RPHandCards, RPTableCards, ShortWait}, CardDeck, CardVal, DeckState, Suit};
 
 pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
-pub const CARD_SCALE: f32 = 0.1;
+pub const CARD_SCALE: f32 = 0.15;
 
 pub fn setup_cards(
     mut commands: Commands,
@@ -45,8 +45,8 @@ pub fn setup_cards(
             },
             Visibility::Hidden,
             Transform {
-                translation: Vec3::new(0. + 30. * idx as f32, 0., 1.),
-                scale: Vec3::new(CARD_SCALE, CARD_SCALE, 1.),
+                translation: Vec3::new(-100. + 100. * idx as f32, -180., 1.),
+                scale: Vec3::new(CARD_SCALE + 0.05, CARD_SCALE + 0.05, 1.),
                 ..default()
             },
             LPHandCards(idx),
@@ -60,7 +60,7 @@ pub fn setup_cards(
             },
             Visibility::Hidden,
             Transform {
-                translation: Vec3::new(-155. + 20. * idx as f32, -190., 1.),
+                translation: Vec3::new(-400. + 75. * idx as f32, -190., 1.),
                 scale: Vec3::new(CARD_SCALE, CARD_SCALE, 1.),
                 ..default()
             },
@@ -75,7 +75,7 @@ pub fn setup_cards(
             },
             Visibility::Hidden,
             Transform {
-                translation: Vec3::new(155. + 20. * idx as f32, 200., 1.),
+                translation: Vec3::new(175. + 75. * idx as f32, 190., 1.),
                 scale: Vec3::new(CARD_SCALE, CARD_SCALE, 1.),
                 ..default()
             },
@@ -101,6 +101,7 @@ pub fn setup_cards(
 }
 
 pub fn deal_cards(
+    mut commands: Commands,
     mut players: Query<&mut Player>,
     mut card_deck: ResMut<CardDeck>,
     mut next_deck_state: ResMut<NextState<DeckState>>,
@@ -114,8 +115,26 @@ pub fn deal_cards(
         player.facedown_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
         player.faceup_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
         player.hand = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
+        info!("{:?}", &player);
     }
-    next_deck_state.set(DeckState::Shuffled);
+
+    // Workaround for not have LocalPlayer created yet...
+    commands.insert_resource(ShortWait {
+        timer: Timer::from_seconds(1., TimerMode::Once),
+    });
+    //next_deck_state.set(DeckState::Shuffled);
+}
+
+pub fn short_wait(
+    time: Res<Time>,
+    mut short_wait: ResMut<ShortWait>,
+    mut next_deck_state: ResMut<NextState<DeckState>>
+) {
+    if short_wait.timer.tick(time.delta()).just_finished() {
+        next_deck_state.set(DeckState::Shuffled);
+    } else {
+        info!("ShortWait: {:?}", short_wait.timer.fraction() * 100.);
+    }
 }
 
 pub fn display_table_cards(
@@ -126,6 +145,7 @@ pub fn display_table_cards(
     mut lp_hand_image_query: Query<(&mut Sprite, &mut Visibility), (With<LPHandCards>, Without<LPTableCards>, Without<RPTableCards>)>,
     mut rp_tablecards_image_query: Query<(&mut Sprite, &mut Visibility), (With<RPTableCards>, Without<LPHandCards>, Without<LPTableCards>)>,
 ) {
+    dbg!(&local_players.0);
     for player in player_query.iter() {
         if local_players.0.contains(&player.handle) {
             // show hand

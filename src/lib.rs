@@ -66,7 +66,6 @@ pub fn read_local_inputs(
     let mut local_inputs = HashMap::new();
 
     // TODO: convert key presses to mouse clicks of objects
-
     for handle in &local_players.0 {
         let mut input = 0u64;
 
