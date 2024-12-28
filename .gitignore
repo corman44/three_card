@@ -3,3 +3,4 @@
 /out/hello*
 package-lock.json
 package.json
+Cargo.toml

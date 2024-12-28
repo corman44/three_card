@@ -1,7 +1,6 @@
 pub mod components;
 pub mod systems;
 
-use std::default;
 
 use bevy::prelude::*;
 use systems::{start_matchbox_socket, wait_for_players};
