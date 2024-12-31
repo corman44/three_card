@@ -4,13 +4,13 @@ use bevy_ggrs::{LocalPlayers, PlayerInputs};
 
 use crate::{networking::SessionSeed, AppState, Config};
 
-use super::{components::{Card, Deck, LPHandCards, LPTableCards, Player, RPHandCards, RPTableCards, ShortWait}, CardDeck, CardVal, DeckState, Suit};
+use super::{components::{Card, Deck, LPHandCards, LPTableCards, Player, PlayerTurnText, RPHandCards, RPTableCards, ShortWait}, CardDeck, CardVal, DeckState, PlayerTurn, Suit};
 
 pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
 pub const CARD_SCALE: f32 = 0.15;
 
-pub fn setup_cards(
+pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut next_app_state: ResMut<NextState<AppState>>,
@@ -97,6 +97,17 @@ pub fn setup_cards(
         Deck
     ));
 
+    // Spawn Player Turn Text
+    commands.spawn((
+        PlayerTurnText,
+        Text2d::new("Your Turn!"),
+        Transform {
+            translation: Vec3::new(400., 200., 1. ),
+            ..default()
+        },
+        Visibility::Hidden,
+    ));
+
     next_app_state.set(AppState::GameStart);
 }
 
@@ -165,6 +176,26 @@ pub fn display_table_cards(
                 *image_handle = card_to_asset(&asset_server, player.clone().faceup_cards[i]);
                 *vis = Visibility::Visible;
             }
+        }
+    }
+}
+
+pub fn display_turn(
+    local_players: Res<LocalPlayers>,
+    player_query: Query<&Player>,
+    mut turn_text_query: Query<(&mut Visibility, &mut Text, &mut TextColor), With<PlayerTurnText>>,
+) {
+    for player in player_query.iter() {
+        if local_players.0.contains(&player.handle) {
+            let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
+            *vis = Visibility::Visible;
+            txt.0 = String::from("YOUR TURN");
+            color.0 = Color::srgb(0.294, 0.969, 0.337);
+        } else {
+            let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
+            *vis = Visibility::Visible;
+            txt.0 = String::from("OTHER PLAYERS TURN..");
+            color.0 = Color::srgb(0.9, 0.9, 0.0);
         }
     }
 }
