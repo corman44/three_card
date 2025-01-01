@@ -24,8 +24,7 @@ pub fn setup(
             ..default()
         },
     ));
-
-    
+   
     // spawn player2
     commands.spawn((
         Node::default(),
@@ -100,9 +99,13 @@ pub fn setup(
     // Spawn Player Turn Text
     commands.spawn((
         PlayerTurnText,
-        Text2d::new("Your Turn!"),
+        Text2d::new(""),
+        TextFont {
+            font_size: 20.,
+            ..Default::default()
+        },
         Transform {
-            translation: Vec3::new(400., 200., 1. ),
+            translation: Vec3::new(20., 250., 1. ),
             ..default()
         },
         Visibility::Hidden,
@@ -120,20 +123,20 @@ pub fn deal_cards(
 ) {
     // first shuffle the deck
     card_deck.shuffle(**sesh_seed);
+    next_deck_state.set(DeckState::Shuffled);
 
     // for each player in the game, deal 3 cards facedown, 3 faceup, 3 to the hand
     for mut player in players.iter_mut() {
         player.facedown_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
         player.faceup_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
         player.hand = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
-        info!("{:?}", &player);
+        // info!("{:?}", &player);
     }
 
     // Workaround for not have LocalPlayer created yet...
     commands.insert_resource(ShortWait {
         timer: Timer::from_seconds(1., TimerMode::Once),
     });
-    //next_deck_state.set(DeckState::Shuffled);
 }
 
 pub fn short_wait(
@@ -142,9 +145,9 @@ pub fn short_wait(
     mut next_deck_state: ResMut<NextState<DeckState>>
 ) {
     if short_wait.timer.tick(time.delta()).just_finished() {
-        next_deck_state.set(DeckState::Shuffled);
+        next_deck_state.set(DeckState::Dealt);
     } else {
-        info!("ShortWait: {:?}", short_wait.timer.fraction() * 100.);
+        // info!("ShortWait: {:?}", short_wait.timer.fraction() * 100.);
     }
 }
 
@@ -152,6 +155,7 @@ pub fn display_table_cards(
     asset_server: Res<AssetServer>,
     local_players: Res<LocalPlayers>,
     player_query: Query<&Player>,
+    mut next_deck_state: ResMut<NextState<DeckState>>,
     mut lp_tablecards_image_query: Query<(&mut Sprite, &mut Visibility), (With<LPTableCards>, Without<LPHandCards>, Without<RPTableCards>)>,
     mut lp_hand_image_query: Query<(&mut Sprite, &mut Visibility), (With<LPHandCards>, Without<LPTableCards>, Without<RPTableCards>)>,
     mut rp_tablecards_image_query: Query<(&mut Sprite, &mut Visibility), (With<RPTableCards>, Without<LPHandCards>, Without<LPTableCards>)>,
@@ -178,12 +182,13 @@ pub fn display_table_cards(
             }
         }
     }
+    next_deck_state.set(DeckState::Display)
 }
 
 pub fn display_turn(
     local_players: Res<LocalPlayers>,
     player_query: Query<&Player>,
-    mut turn_text_query: Query<(&mut Visibility, &mut Text, &mut TextColor), With<PlayerTurnText>>,
+    mut turn_text_query: Query<(&mut Visibility, &mut Text2d, &mut TextColor), With<PlayerTurnText>>,
 ) {
     for player in player_query.iter() {
         if local_players.0.contains(&player.handle) {
