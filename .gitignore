@@ -4,3 +4,7 @@
 package-lock.json
 package.json
 Cargo.toml
+out/three_card_bg.wasm
+out/three_card_bg.wasm.d.ts
+out/three_card.d.ts
+out/three_card.js

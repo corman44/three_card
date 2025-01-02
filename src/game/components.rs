@@ -66,6 +66,7 @@ impl Card {
     }
 }
 
+
 #[derive(Resource)]
 pub struct ShortWait {
     pub timer: Timer,
@@ -97,6 +98,10 @@ pub struct Deck;
 
 #[derive(Debug, Clone, Component)]
 pub struct Pile;
+
+#[derive(Debug, Clone, Component)]
+pub struct PlayerTurnText;
+
 
 #[derive(Debug, Clone, Component)]
 pub struct DeadCards {

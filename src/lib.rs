@@ -1,6 +1,7 @@
 pub mod game;
 pub mod menus;
 pub mod networking;
+pub mod dev_tools;
 
 use bevy::{core_pipeline::bloom::Bloom, prelude::*, utils::HashMap};
 use bevy_ggrs::{ LocalInputs, LocalPlayers,};
@@ -111,5 +112,4 @@ pub fn read_local_inputs(
 
     commands.insert_resource(LocalInputs::<Config>(local_inputs));
 }
-
 

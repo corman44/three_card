@@ -1,16 +1,16 @@
 
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::info};
 use bevy_ggrs::{LocalPlayers, PlayerInputs};
 
 use crate::{networking::SessionSeed, AppState, Config};
 
-use super::{components::{Card, Deck, LPHandCards, LPTableCards, Player, RPHandCards, RPTableCards, ShortWait}, CardDeck, CardVal, DeckState, Suit};
+use super::{components::{Card, Deck, LPHandCards, LPTableCards, Player, PlayerTurnText, RPHandCards, RPTableCards, ShortWait}, CardDeck, CardVal, DeckState, PlayerTurn, Suit};
 
 pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
 pub const CARD_SCALE: f32 = 0.15;
 
-pub fn setup_cards(
+pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut next_app_state: ResMut<NextState<AppState>>,
@@ -24,8 +24,7 @@ pub fn setup_cards(
             ..default()
         },
     ));
-
-    
+   
     // spawn player2
     commands.spawn((
         Node::default(),
@@ -97,6 +96,21 @@ pub fn setup_cards(
         Deck
     ));
 
+    // Spawn Player Turn Text
+    commands.spawn((
+        PlayerTurnText,
+        Text2d::new(""),
+        TextFont {
+            font_size: 20.,
+            ..Default::default()
+        },
+        Transform {
+            translation: Vec3::new(20., 250., 1. ),
+            ..default()
+        },
+        Visibility::Hidden,
+    ));
+
     next_app_state.set(AppState::GameStart);
 }
 
@@ -109,20 +123,20 @@ pub fn deal_cards(
 ) {
     // first shuffle the deck
     card_deck.shuffle(**sesh_seed);
+    next_deck_state.set(DeckState::Shuffled);
 
     // for each player in the game, deal 3 cards facedown, 3 faceup, 3 to the hand
     for mut player in players.iter_mut() {
         player.facedown_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
         player.faceup_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
         player.hand = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
-        info!("{:?}", &player);
+        player.hand.sort();
     }
 
     // Workaround for not have LocalPlayer created yet...
     commands.insert_resource(ShortWait {
         timer: Timer::from_seconds(1., TimerMode::Once),
     });
-    //next_deck_state.set(DeckState::Shuffled);
 }
 
 pub fn short_wait(
@@ -131,9 +145,9 @@ pub fn short_wait(
     mut next_deck_state: ResMut<NextState<DeckState>>
 ) {
     if short_wait.timer.tick(time.delta()).just_finished() {
-        next_deck_state.set(DeckState::Shuffled);
+        next_deck_state.set(DeckState::Dealt);
     } else {
-        info!("ShortWait: {:?}", short_wait.timer.fraction() * 100.);
+        // info!("ShortWait: {:?}", short_wait.timer.fraction() * 100.);
     }
 }
 
@@ -141,6 +155,7 @@ pub fn display_table_cards(
     asset_server: Res<AssetServer>,
     local_players: Res<LocalPlayers>,
     player_query: Query<&Player>,
+    mut next_deck_state: ResMut<NextState<DeckState>>,
     mut lp_tablecards_image_query: Query<(&mut Sprite, &mut Visibility), (With<LPTableCards>, Without<LPHandCards>, Without<RPTableCards>)>,
     mut lp_hand_image_query: Query<(&mut Sprite, &mut Visibility), (With<LPHandCards>, Without<LPTableCards>, Without<RPTableCards>)>,
     mut rp_tablecards_image_query: Query<(&mut Sprite, &mut Visibility), (With<RPTableCards>, Without<LPHandCards>, Without<LPTableCards>)>,
@@ -167,6 +182,29 @@ pub fn display_table_cards(
             }
         }
     }
+    next_deck_state.set(DeckState::Display)
+}
+
+pub fn display_turn(
+    local_players: Res<LocalPlayers>,
+    player_turn: Res<PlayerTurn>,
+    mut turn_text_query: Query<(&mut Visibility, &mut Text2d, &mut TextColor), With<PlayerTurnText>>,
+    mut next_deck_state: ResMut<NextState<DeckState>>,
+) {
+    if local_players.0.contains(&player_turn.0) {
+        let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
+        *vis = Visibility::Visible;
+        txt.0 = String::from("YOUR TURN");
+        color.0 = Color::srgb(0.294, 0.969, 0.337);
+    } else {
+        let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
+        *vis = Visibility::Visible;
+        txt.0 = String::from("OTHER PLAYERS TURN..");
+        color.0 = Color::srgb(0.9, 0.9, 0.0);
+    }
+
+    // info!("{:?}", turn_text_query.single().1);
+    next_deck_state.set(DeckState::Gameplay);
 }
 
 pub fn card_to_asset(

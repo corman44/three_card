@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_ggrs::{GgrsPlugin, ReadInputs};
-use three_card::{game::{components::Card, CardDeck, CardVal, GamePlugin, Suit}, networking::MyNetworkingPlugin, read_local_inputs, setup, AppState, Config};
+use three_card::{dev_tools::DevToolsPlugin, game::{components::Card, CardDeck, CardVal, GamePlugin, Suit}, networking::MyNetworkingPlugin, read_local_inputs, setup, AppState, Config};
 
 /*
     Currently based on Matchbox Guide:
@@ -25,13 +25,14 @@ fn main() {
                 }),
                 ..default()
             }),
+            DevToolsPlugin,
             GamePlugin,
             GgrsPlugin::<Config>::default(),
             MyNetworkingPlugin,
         ))
         .init_resource::<CardDeck>()
-        .insert_resource(ClearColor(Color::srgb(0.53, 0.53, 0.53)))
         .init_state::<AppState>()
+        .insert_resource(ClearColor(Color::srgb(0.53, 0.53, 0.53)))
         .add_systems(Startup, (
             setup,
         ))
