@@ -31,8 +31,8 @@ fn main() {
             MyNetworkingPlugin,
         ))
         .init_resource::<CardDeck>()
-        .insert_resource(ClearColor(Color::srgb(0.53, 0.53, 0.53)))
         .init_state::<AppState>()
+        .insert_resource(ClearColor(Color::srgb(0.53, 0.53, 0.53)))
         .add_systems(Startup, (
             setup,
         ))

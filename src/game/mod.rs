@@ -15,13 +15,16 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app
             .init_resource::<CardDeck>()
+            .init_resource::<PlayerTurn>()
             .init_state::<DeckState>()
-            .init_state::<PlayerTurn>()
             .add_systems(OnEnter(AppState::PlayersMatched), setup)
             .add_systems(OnEnter(AppState::GameStart), deal_cards.after(short_wait))
             .add_systems(Update, short_wait.run_if(in_state(DeckState::Shuffled)))
             .add_systems(OnEnter(DeckState::Dealt), display_table_cards)
-            .add_systems(Update, display_turn.run_if(in_state(DeckState::Display)))
+            .add_systems(Update, display_turn.run_if(
+                in_state(DeckState::Display)
+                .or(in_state(DeckState::Gameplay))
+            ))
             ;
     }
 }
@@ -109,12 +112,12 @@ impl CardDeck {
     }
 }
 
-#[derive(States, Default, Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Resource, Default, Debug, PartialEq, Eq, Clone, Hash)]
 pub struct PlayerTurn(pub usize);
 
 impl PlayerTurn {
     // only for 2 player atm
-    pub fn next(mut self) {
+    pub fn next(&mut self) {
         self.0 = self.0 ^ 1;
     }
 }

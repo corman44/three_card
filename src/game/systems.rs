@@ -1,5 +1,5 @@
 
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::info};
 use bevy_ggrs::{LocalPlayers, PlayerInputs};
 
 use crate::{networking::SessionSeed, AppState, Config};
@@ -130,7 +130,7 @@ pub fn deal_cards(
         player.facedown_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
         player.faceup_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
         player.hand = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
-        // info!("{:?}", &player);
+        player.hand.sort();
     }
 
     // Workaround for not have LocalPlayer created yet...
@@ -187,22 +187,24 @@ pub fn display_table_cards(
 
 pub fn display_turn(
     local_players: Res<LocalPlayers>,
-    player_query: Query<&Player>,
+    player_turn: Res<PlayerTurn>,
     mut turn_text_query: Query<(&mut Visibility, &mut Text2d, &mut TextColor), With<PlayerTurnText>>,
+    mut next_deck_state: ResMut<NextState<DeckState>>,
 ) {
-    for player in player_query.iter() {
-        if local_players.0.contains(&player.handle) {
-            let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
-            *vis = Visibility::Visible;
-            txt.0 = String::from("YOUR TURN");
-            color.0 = Color::srgb(0.294, 0.969, 0.337);
-        } else {
-            let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
-            *vis = Visibility::Visible;
-            txt.0 = String::from("OTHER PLAYERS TURN..");
-            color.0 = Color::srgb(0.9, 0.9, 0.0);
-        }
+    if local_players.0.contains(&player_turn.0) {
+        let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
+        *vis = Visibility::Visible;
+        txt.0 = String::from("YOUR TURN");
+        color.0 = Color::srgb(0.294, 0.969, 0.337);
+    } else {
+        let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
+        *vis = Visibility::Visible;
+        txt.0 = String::from("OTHER PLAYERS TURN..");
+        color.0 = Color::srgb(0.9, 0.9, 0.0);
     }
+
+    // info!("{:?}", turn_text_query.single().1);
+    next_deck_state.set(DeckState::Gameplay);
 }
 
 pub fn card_to_asset(
