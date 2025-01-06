@@ -29,6 +29,9 @@ impl Plugin for GamePlugin {
     }
 }
 
+#[derive(Debug, Resource)]
+pub struct LocalPlayers(pub Vec<u64>);
+
 #[derive(States, Default, Debug, PartialEq, Eq, Clone, Hash)]
 pub enum DeckState {
     #[default]

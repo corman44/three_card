@@ -1,10 +1,9 @@
 
 use bevy::{prelude::*, utils::info};
-use bevy_ggrs::{LocalPlayers, PlayerInputs};
 
-use crate::{networking::SessionSeed, AppState, Config};
+use crate::{networking::SessionSeed, AppState};
 
-use super::{components::{Card, Deck, LPHandCards, LPTableCards, Player, PlayerTurnText, RPHandCards, RPTableCards, ShortWait}, CardDeck, CardVal, DeckState, PlayerTurn, Suit};
+use super::{components::{Card, Deck, LPHandCards, LPTableCards, Player, PlayerTurnText, RPHandCards, RPTableCards, ShortWait}, CardDeck, CardVal, DeckState, LocalPlayers, PlayerTurn, Suit};
 
 pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
@@ -162,7 +161,7 @@ pub fn display_table_cards(
 ) {
     dbg!(&local_players.0);
     for player in player_query.iter() {
-        if local_players.0.contains(&player.handle) {
+        if local_players.0.contains(&(player.handle as u64)) {
             // show hand
             for (i, (mut image_handle, mut vis)) in lp_hand_image_query.iter_mut().enumerate() {
                 *image_handle = card_to_asset(&asset_server, player.clone().hand[i]);
@@ -191,7 +190,7 @@ pub fn display_turn(
     mut turn_text_query: Query<(&mut Visibility, &mut Text2d, &mut TextColor), With<PlayerTurnText>>,
     mut next_deck_state: ResMut<NextState<DeckState>>,
 ) {
-    if local_players.0.contains(&player_turn.0) {
+    if local_players.0.contains(&(player_turn.0 as u64)) {
         let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
         *vis = Visibility::Visible;
         txt.0 = String::from("YOUR TURN");
@@ -240,23 +239,23 @@ pub fn card_to_asset(
     asset_server.load(card_asset).into()
 }
 
-pub fn process_inputs(
-    local_players: Res<LocalPlayers>,
-    mut player_query: Query<&mut Player>,
-    inputs: Res<PlayerInputs<Config>>,
-) {
-    for player in player_query.iter() {
-        if local_players.0.contains(&player.handle) {
-            // actions are taken the local player
+// pub fn process_inputs(
+//     local_players: Res<LocalPlayers>,
+//     mut player_query: Query<&mut Player>,
+//     inputs: Res<PlayerInputs<Config>>,
+// ) {
+//     for player in player_query.iter() {
+//         if local_players.0.contains(&player.handle) {
+//             // actions are taken the local player
 
-            // TODO: Numbers represent selected cards
-            // TODO: Enter -> check if selected card is possible to play and play them
-            // TODO: T -> add cards from pile to players hand
-            // TODO: P -> add cards from deck until player has 3 (or deck is empty)
-        }
-        else {
-            // actions are for the remote player
-        }
-    }
-}
+//             // TODO: Numbers represent selected cards
+//             // TODO: Enter -> check if selected card is possible to play and play them
+//             // TODO: T -> add cards from pile to players hand
+//             // TODO: P -> add cards from deck until player has 3 (or deck is empty)
+//         }
+//         else {
+//             // actions are for the remote player
+//         }
+//     }
+// }
 
