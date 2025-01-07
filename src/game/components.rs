@@ -110,7 +110,7 @@ pub struct DeadCards {
 
 #[derive(Component, Clone, Default, Debug)]
 pub struct Player {
-    pub handle: usize,
+    pub handle: u64,
     pub facedown_cards: Vec<Card>,
     pub faceup_cards: Vec<Card>,
     pub hand: Vec<Card>,

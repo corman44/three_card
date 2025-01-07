@@ -15,23 +15,23 @@ pub fn setup(
     mut next_app_state: ResMut<NextState<AppState>>,
 ) {
 
-    // spawn player1
-    commands.spawn((
-        Node::default(),
-        Player {
-            handle: 0,
-            ..default()
-        },
-    ));
+    // // spawn player1
+    // commands.spawn((
+    //     Node::default(),
+    //     Player {
+    //         handle: 0,
+    //         ..default()
+    //     },
+    // ));
    
-    // spawn player2
-    commands.spawn((
-        Node::default(),
-        Player {
-            handle: 1,
-            ..default()
-        },
-    ));
+    // // spawn player2
+    // commands.spawn((
+    //     Node::default(),
+    //     Player {
+    //         handle: 1,
+    //         ..default()
+    //     },
+    // ));
 
     // Spawn Cards..
     for idx in 0..3 {
