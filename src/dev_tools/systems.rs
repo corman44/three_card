@@ -1,8 +1,6 @@
-use std::ops::{Deref, DerefMut};
-
 use bevy::prelude::*;
 
-use crate::{game::{DeckState, PlayerTurn}, AppState};
+use crate::{game::components::{DeckState, PlayerTurn}, AppState};
 
 use super::component::InfoTimer;
 
@@ -31,6 +29,6 @@ pub fn print_state_changes(
     }
 
     if player_turn.is_changed() {
-        info!("PlayerTurn::{:?}", player_turn.0);
+        info!("PlayerTurn: {:?}", player_turn);
     }
 }

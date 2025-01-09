@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use three_card::{dev_tools::DevToolsPlugin, game::{components::Card, CardDeck, CardVal, GamePlugin, Suit}, networking::MyNetworkingPlugin, setup, AppState};
+use three_card::{dev_tools::DevToolsPlugin, game::{components::{Card, CardDeck}, GamePlugin}, networking::MyNetworkingPlugin, setup, AppState};
 
 /*
     Currently based on Matchbox Guide:
@@ -8,6 +8,11 @@ use three_card::{dev_tools::DevToolsPlugin, game::{components::Card, CardDeck, C
 
  */
 
+// Main Priorities!!
+// TODO Properly Integrate PlayerTurn, Peer ID, and Player together for connection and card display/placement
+// TODO send player turn update from each client to each other (only if it's your turn can you request the next turn)
+
+// others
 // TODO: highlight selected card(s)
 // TODO: only display card change if there is a change (Changed<>)
 // TODO: add player turn notification (Arrow, highlights, or something green)
@@ -40,6 +45,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use three_card::game::components::{CardVal, Suit};
+
     use super::*;
 
     #[test]

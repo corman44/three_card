@@ -1,7 +1,7 @@
-use bevy::{prelude::*, tasks::futures_lite::StreamExt};
-use bevy_matchbox::{prelude::PeerId, MatchboxSocket};
+use bevy::prelude::*;
+use bevy_matchbox::MatchboxSocket;
 
-use crate::{game::LocalPlayers, AppState};
+use crate::{game::components::{LocalPlayers, Player, PlayerTurn}, AppState};
 
 use super::SessionSeed;
 
@@ -17,6 +17,8 @@ pub fn wait_for_players(
     mut commands: Commands,
     mut socket: ResMut<MatchboxSocket>,
     mut next_matchmaking_state: ResMut<NextState<AppState>>,
+    mut players_query: Query<&mut Player>,
+    mut player_turn: ResMut<PlayerTurn>,
 ) {
     if socket.get_channel(0).is_err() {
         info!("socket error: {:?}", socket);
@@ -40,7 +42,18 @@ pub fn wait_for_players(
         players.push(peer_id.0 ^ peer_id.1);
     }
     
-    // FIXME need to assign LocalPlayer and All Player IDs
+    // Set Player IDs in Player Struct
+    for (mut playa, id) in players_query.iter_mut().zip(players.iter()) {
+        playa.handle = *id;
+    }
+    info!("networking player_query: {:?}",players_query.iter().collect::<Vec<_>>());
+
+    // Setup Player Turns
+    players.sort();
+    for playa in players {
+        player_turn.ids.push(playa);
+    }
+    
     commands.insert_resource(LocalPlayers{ 0: vec![id.0 ^ id.1]});
     commands.insert_resource(SessionSeed(seed));
     next_matchmaking_state.set(AppState::PlayersMatched);

@@ -5,7 +5,8 @@ use bevy::prelude::*;
 use component::InfoTimer;
 use systems::{handle_info_timer, print_state_changes};
 
-use crate::game::DeckState;
+use crate::game::components::DeckState;
+
 
 pub struct DevToolsPlugin;
 
