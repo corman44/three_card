@@ -36,20 +36,23 @@ pub fn wait_for_players(
     let id = socket.id().expect("no peer id assigned").0.as_u64_pair();
     let mut players: Vec<u64> = vec![id.0 ^ id.1];
     let mut seed = id.0 ^ id.1;
+    let mut peer_count = 0;
     for peer in socket.connected_peers() {
         let peer_id = peer.0.as_u64_pair();
         seed ^= peer_id.0 ^ peer_id.1;
         players.push(peer_id.0 ^ peer_id.1);
+        peer_count += 1;
     }
     
+    // Setup Player Turns
+    players.sort();
+
     // Set Player IDs in Player Struct
     for (mut playa, id) in players_query.iter_mut().zip(players.iter()) {
         playa.handle = *id;
     }
-    info!("networking player_query: {:?}",players_query.iter().collect::<Vec<_>>());
 
-    // Setup Player Turns
-    players.sort();
+    // Set Player IDs in PlayerTurn
     for playa in players {
         player_turn.ids.push(playa);
     }

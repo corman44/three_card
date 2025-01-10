@@ -208,7 +208,6 @@ pub struct PlayerTurn{
     pub turn: usize,
 }
 impl PlayerTurn {
-    // only for 2 player atm
     pub fn next(&mut self) {
         self.turn += 1;
         if self.turn >= self.ids.len() {
