@@ -3,9 +3,7 @@ pub mod menus;
 pub mod networking;
 pub mod dev_tools;
 
-use bevy::{core_pipeline::bloom::Bloom, prelude::*, utils::HashMap};
-use bevy_ggrs::{ LocalInputs, LocalPlayers,};
-use bevy_matchbox::matchbox_socket::PeerId;
+use bevy::{core_pipeline::bloom::Bloom, prelude::*};
 
 // Input mapping:
 //  - number -> selecting card for ready to play (only allow selecting of same value card)
@@ -23,8 +21,6 @@ const INPUT_9: u64 = 1 << 8;
 const INPUT_ENTER: u64 = 1 << 9;
 const INPUT_PICKUPPILE: u64 = 1 << 10;
 const INPUT_PICKUPDECK: u64 = 1 << 11;
-
-pub type Config = bevy_ggrs::GgrsConfig<u64, PeerId>;
 
 #[derive(Debug, Default, States, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum AppState{
@@ -57,59 +53,5 @@ pub fn setup(
             ..default()
         }
     );
-}
-
-pub fn read_local_inputs(
-    mut commands: Commands,
-    keys: Res<ButtonInput<KeyCode>>,
-    local_players: Res<LocalPlayers>,
-) {
-    let mut local_inputs = HashMap::new();
-
-    // TODO: convert key presses to mouse clicks of objects
-    for handle in &local_players.0 {
-        let mut input = 0u64;
-
-        if keys.pressed(KeyCode::Digit1) {
-            input |= INPUT_1;
-        }
-        if keys.pressed(KeyCode::Digit2) {
-            input |= INPUT_2;
-        }
-        if keys.pressed(KeyCode::Digit3) {
-            input |= INPUT_3;
-        }
-        if keys.pressed(KeyCode::Digit4) {
-            input |= INPUT_4;
-        }
-        if keys.pressed(KeyCode::Digit5) {
-            input |= INPUT_5;
-        }
-        if keys.pressed(KeyCode::Digit6) {
-            input |= INPUT_6;
-        }
-        if keys.pressed(KeyCode::Digit7) {
-            input |= INPUT_7;
-        }
-        if keys.pressed(KeyCode::Digit8) {
-            input |= INPUT_8;
-        }
-        if keys.pressed(KeyCode::Digit9) {
-            input |= INPUT_9;
-        }
-        if keys.pressed(KeyCode::Enter) {
-            input |= INPUT_ENTER;
-        }
-        if keys.pressed(KeyCode::KeyP) {
-            input |= INPUT_PICKUPPILE;
-        }
-        if keys.pressed(KeyCode::KeyD) {
-            input |= INPUT_PICKUPDECK;
-        }
-
-        local_inputs.insert(*handle, input);
-    }
-
-    commands.insert_resource(LocalInputs::<Config>(local_inputs));
 }
 
