@@ -1,10 +1,9 @@
 
 use bevy::{prelude::*, utils::info};
-use bevy_ggrs::{LocalPlayers, PlayerInputs};
 
-use crate::{networking::SessionSeed, AppState, Config};
+use crate::{networking::SessionSeed, AppState};
 
-use super::{components::{Card, Deck, LPHandCards, LPTableCards, Player, PlayerTurnText, RPHandCards, RPTableCards, ShortWait}, CardDeck, CardVal, DeckState, PlayerTurn, Suit};
+use super::{components::{Card, CardVal, Deck, LPHandCards, LPTableCards, LocalPlayers, Player, PlayerTurnText, RPHandCards, RPTableCards, ShortWait, Suit}, CardDeck, DeckState,  PlayerTurn};
 
 pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
@@ -111,7 +110,7 @@ pub fn setup(
         Visibility::Hidden,
     ));
 
-    next_app_state.set(AppState::GameStart);
+    // next_app_state.set(AppState::GameStart);
 }
 
 pub fn deal_cards(
@@ -137,6 +136,8 @@ pub fn deal_cards(
     commands.insert_resource(ShortWait {
         timer: Timer::from_seconds(1., TimerMode::Once),
     });
+
+    next_deck_state.set(DeckState::Dealt);
 }
 
 pub fn short_wait(
@@ -161,8 +162,9 @@ pub fn display_table_cards(
     mut rp_tablecards_image_query: Query<(&mut Sprite, &mut Visibility), (With<RPTableCards>, Without<LPHandCards>, Without<LPTableCards>)>,
 ) {
     dbg!(&local_players.0);
+    dbg!(&player_query.iter().map(|a| a.handle).collect::<Vec<_>>());
     for player in player_query.iter() {
-        if local_players.0.contains(&player.handle) {
+        if local_players.0.contains(&(player.handle as u64)) {
             // show hand
             for (i, (mut image_handle, mut vis)) in lp_hand_image_query.iter_mut().enumerate() {
                 *image_handle = card_to_asset(&asset_server, player.clone().hand[i]);
@@ -191,7 +193,7 @@ pub fn display_turn(
     mut turn_text_query: Query<(&mut Visibility, &mut Text2d, &mut TextColor), With<PlayerTurnText>>,
     mut next_deck_state: ResMut<NextState<DeckState>>,
 ) {
-    if local_players.0.contains(&player_turn.0) {
+    if local_players.0.contains(&(player_turn.ids[player_turn.turn] as u64)) {
         let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
         *vis = Visibility::Visible;
         txt.0 = String::from("YOUR TURN");
@@ -238,25 +240,5 @@ pub fn card_to_asset(
     }
     let card_asset = format!("{}{}{}",CARD_LOCATION,card_suit,card_num);
     asset_server.load(card_asset).into()
-}
-
-pub fn process_inputs(
-    local_players: Res<LocalPlayers>,
-    mut player_query: Query<&mut Player>,
-    inputs: Res<PlayerInputs<Config>>,
-) {
-    for player in player_query.iter() {
-        if local_players.0.contains(&player.handle) {
-            // actions are taken the local player
-
-            // TODO: Numbers represent selected cards
-            // TODO: Enter -> check if selected card is possible to play and play them
-            // TODO: T -> add cards from pile to players hand
-            // TODO: P -> add cards from deck until player has 3 (or deck is empty)
-        }
-        else {
-            // actions are for the remote player
-        }
-    }
 }
 

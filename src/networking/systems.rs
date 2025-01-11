@@ -1,8 +1,7 @@
 use bevy::prelude::*;
-use bevy_ggrs::*;
 use bevy_matchbox::MatchboxSocket;
 
-use crate::{AppState, Config};
+use crate::{game::components::{LocalPlayers, Player, PlayerTurn}, AppState};
 
 use super::SessionSeed;
 
@@ -18,6 +17,8 @@ pub fn wait_for_players(
     mut commands: Commands,
     mut socket: ResMut<MatchboxSocket>,
     mut next_matchmaking_state: ResMut<NextState<AppState>>,
+    mut players_query: Query<&mut Player>,
+    mut player_turn: ResMut<PlayerTurn>,
 ) {
     if socket.get_channel(0).is_err() {
         info!("socket error: {:?}", socket);
@@ -25,40 +26,39 @@ pub fn wait_for_players(
     }
 
     socket.update_peers();
-    let players = socket.players();
-    let num_players = 2;
-    if players.len() < num_players {
+    let peers = 1;
+    if socket.connected_peers().count() == peers {
+        info!("2 Players Connected :)");
+    } else {
         return;
     }
 
-    info!("2 Players Connected :D");
-
-    // create GGRS P2P sesh
-    let mut session_builder = ggrs::SessionBuilder::<Config>::new()
-        .with_num_players(num_players)
-        .with_input_delay(2);
-
-    for (i, player) in players.into_iter().enumerate() {
-        session_builder = session_builder
-            .add_player(player, i)
-            .expect("failed to add player..");
-    }
-
-    let channel = socket.take_channel(0).unwrap();
-
-    let ggrs_session = session_builder
-        .start_p2p_session(channel)
-        .expect("failed to start session..");
-
     let id = socket.id().expect("no peer id assigned").0.as_u64_pair();
+    let mut players: Vec<u64> = vec![id.0 ^ id.1];
     let mut seed = id.0 ^ id.1;
+    let mut peer_count = 0;
     for peer in socket.connected_peers() {
         let peer_id = peer.0.as_u64_pair();
         seed ^= peer_id.0 ^ peer_id.1;
+        players.push(peer_id.0 ^ peer_id.1);
+        peer_count += 1;
     }
-    commands.insert_resource(SessionSeed(seed));
+    
+    // Setup Player Turns
+    players.sort();
 
-    commands.insert_resource(bevy_ggrs::Session::P2P(ggrs_session));
+    // Set Player IDs in Player Struct
+    for (mut playa, id) in players_query.iter_mut().zip(players.iter()) {
+        playa.handle = *id;
+    }
+
+    // Set Player IDs in PlayerTurn
+    for playa in players {
+        player_turn.ids.push(playa);
+    }
+    
+    commands.insert_resource(LocalPlayers{ 0: vec![id.0 ^ id.1]});
+    commands.insert_resource(SessionSeed(seed));
     next_matchmaking_state.set(AppState::PlayersMatched);
 }
 
