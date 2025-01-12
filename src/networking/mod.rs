@@ -3,7 +3,7 @@ pub mod systems;
 
 
 use bevy::prelude::*;
-use systems::{start_matchbox_socket, wait_for_players};
+use systems::{rx_msg, start_matchbox_socket, tx_msg, wait_for_players};
 
 use crate::AppState;
 
@@ -14,6 +14,7 @@ impl Plugin for MyNetworkingPlugin {
         app
             .add_systems(Startup, start_matchbox_socket)
             .add_systems(Update, wait_for_players.run_if(in_state(AppState::WaitingForPlayers)))
+            .add_systems(Update, (tx_msg,rx_msg).run_if(in_state(AppState::PlayersMatched)))
         ;
     }
 }

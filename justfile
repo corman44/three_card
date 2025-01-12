@@ -7,6 +7,9 @@ build-wasm:
 run-wasm:
     basic-http-server out/
 
+run-wasm-remote:
+    basic-http-server --addr 0.0.0.0:4000 out/
+
 wasm:
     just build-wasm
     just run-wasm
