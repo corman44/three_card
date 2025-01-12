@@ -2,12 +2,6 @@ use bevy::prelude::*;
 
 use bitcode::{Encode, Decode};
 
-// #[derive(Debug, Encode, Decode)]
-// pub struct SimpleMsg<'a> {
-//     pub msg: &'a str,
-// }
-
-
 #[derive(Debug, Encode, Decode, Default)]
 pub enum ActionType {
     PickupPile,

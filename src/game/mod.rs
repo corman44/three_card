@@ -2,7 +2,7 @@ pub mod components;
 pub mod systems;
 
 use bevy::prelude::*;
-use components::{CardDeck, DeckState, PlayerTurn};
+use components::{CardDeck, DeckState, PlayerTurn, SelectedCards};
 use systems::{deal_cards, display_table_cards, display_turn, setup};
 
 use crate::AppState;
@@ -14,6 +14,7 @@ impl Plugin for GamePlugin {
         app
             .init_resource::<CardDeck>()
             .init_resource::<PlayerTurn>()
+            .init_resource::<SelectedCards>()
             .init_state::<DeckState>()
             .add_systems(Startup, setup)
             .add_systems(OnEnter(AppState::PlayersMatched), deal_cards)

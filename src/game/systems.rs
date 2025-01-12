@@ -3,7 +3,7 @@ use bevy::{prelude::*, utils::info};
 
 use crate::{networking::SessionSeed, AppState};
 
-use super::{components::{Card, CardVal, Deck, LPHandCards, LPTableCards, LocalPlayers, Player, PlayerTurnText, RPHandCards, RPTableCards, ShortWait, Suit}, CardDeck, DeckState,  PlayerTurn};
+use super::{components::{Card, CardVal, Deck, KeyToDigit, LPHandCards, LPTableCards, LocalPlayers, Player, PlayerTurnText, RPHandCards, RPTableCards, SelectedCards, ShortWait, Suit}, CardDeck, DeckState,  PlayerTurn};
 
 pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
@@ -242,3 +242,16 @@ pub fn card_to_asset(
     asset_server.load(card_asset).into()
 }
 
+pub fn select_cards(
+    local_players: Res<LocalPlayers>,
+    player_turn: Res<PlayerTurn>,
+    mut selected_cards: ResMut<SelectedCards>,
+    button: Res<ButtonInput<KeyCode>>,
+) {
+    if button.any_just_pressed(
+        [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4, KeyCode::Digit5, KeyCode::Digit6, KeyCode::Digit7, KeyCode::Digit8, KeyCode::Digit9, KeyCode::Digit0]
+    ) {
+        let key = button.get_just_pressed().next().expect("expected button press..");
+        selected_cards.0.push(key.to_digit());
+    }
+}

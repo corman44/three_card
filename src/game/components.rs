@@ -202,6 +202,31 @@ impl CardDeck {
     }
 }
 
+#[derive(Debug, Default, Resource)]
+pub struct SelectedCards(pub Vec<u8>);
+
+pub trait KeyToDigit {
+    fn to_digit(&self) -> u8;
+}
+
+impl KeyToDigit for KeyCode {
+    fn to_digit(&self) -> u8 {
+        match *self {
+            KeyCode::Digit0 => 0,
+            KeyCode::Digit1 => 1,
+            KeyCode::Digit2 => 2,
+            KeyCode::Digit3 => 3,
+            KeyCode::Digit4 => 4,
+            KeyCode::Digit5 => 5,
+            KeyCode::Digit6 => 6,
+            KeyCode::Digit7 => 7,
+            KeyCode::Digit8 => 8,
+            KeyCode::Digit9 => 9,
+            _ => panic!("Problems.."),
+        }
+    }
+}
+
 #[derive(Resource, Default, Debug, PartialEq, Eq, Clone, Hash)]
 pub struct PlayerTurn{
     pub ids: Vec<u64>,

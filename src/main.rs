@@ -2,10 +2,8 @@ use bevy::prelude::*;
 use three_card::{dev_tools::DevToolsPlugin, game::{components::CardDeck, GamePlugin}, networking::MyNetworkingPlugin, setup, AppState};
 
 /*
-    Currently based on Matchbox Guide:
- - https://johanhelsing.studio/posts/extreme-bevy
+    Based on Matchbox Guide:
  - https://github.com/johanhelsing/matchbox
-
  */
 
 // Main Priorities!!

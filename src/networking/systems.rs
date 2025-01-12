@@ -69,26 +69,26 @@ pub fn rx_msg(
 
 ) {
     // if other players turn then we listen for messages
-    if *local_player.0.first().unwrap() != player_turn.current_turn() {
-        socket.update_peers();
-        
-        let channel = socket.get_channel_mut(0).expect("no channel 0..");
-        for (id, msg) in channel.receive() {
-            let decoded: PlayerCommand = bitcode::decode(&msg).expect("unable to decode PlayerCommand");
-            match decoded.action {
-                ActionType::PickupPile => {
+    socket.update_peers();
+    let channel = socket.get_channel_mut(0).expect("no channel 0 found..");
+    for (id, msg) in channel.receive() {
+        let decoded: PlayerCommand = bitcode::decode(&msg).expect("unable to decode PlayerCommand");
+        match decoded.action {
+            ActionType::PickupPile => {
+                if *local_player.0.first().unwrap() != player_turn.current_turn() {
                     info!("msg from: {id}\nAction::PickupPile");
                     player_turn.next();
-                },
-                ActionType::PickupDeck => {
-                    info!("msg from: {id}\nAction::PickupDeck");
-                    player_turn.next();
-                },
-                ActionType::PlayCards => {
+                }
+            },
+            ActionType::PickupDeck => {
+                info!("msg from: {id}\nAction::PickupDeck");
+            },
+            ActionType::PlayCards => {
+                if *local_player.0.first().unwrap() != player_turn.current_turn() {
                     info!("msg from: {id}\nAction::PlayCards\nCards: {:?}",decoded.data.expect("no cards provided for PlayCards"));
                     player_turn.next();
-                },
-            }
+                }
+            },
         }
     }
 }
@@ -96,6 +96,7 @@ pub fn rx_msg(
 pub fn tx_msg(
     button: Res<ButtonInput<KeyCode>>,
     local_player: Res<LocalPlayers>,
+    mut players_query: Query<&mut Player>,
     mut player_turn: ResMut<PlayerTurn>,
     mut socket: ResMut<MatchboxSocket>,
 ) {
@@ -123,15 +124,25 @@ pub fn tx_msg(
             player_turn.next();
         }
 
-        if button.just_pressed(KeyCode::KeyP) { // PickupPile Command
-            let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
-            let channel = socket.get_channel_mut(0).expect("no channel 0..");
-            let msg = PlayerCommand {
-                action: ActionType::PickupPile,
-                ..default()
-            };
-            channel.send(bitcode::encode(&msg).into(), peer);
-            player_turn.next();
+    }
+
+    if button.just_pressed(KeyCode::KeyP) { // PickupPile Command
+        // TODO check if LP Hand is < 3 then allow for card pickup
+        for player in players_query.iter() {
+            if player.handle == *local_player.0.first().unwrap() { // found LP
+                if player.hand.len() < 3 {
+                    // TODO send message and pickup X cards
+                }
+            }
         }
+
+        let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
+        let channel = socket.get_channel_mut(0).expect("no channel 0..");
+        let msg = PlayerCommand {
+            action: ActionType::PickupPile,
+            ..default()
+        };
+        channel.send(bitcode::encode(&msg).into(), peer);
+        player_turn.next();
     }
 }
