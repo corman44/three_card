@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use three_card::{dev_tools::DevToolsPlugin, game::{components::{Card, CardDeck}, GamePlugin}, networking::MyNetworkingPlugin, setup, AppState};
+use three_card::{dev_tools::DevToolsPlugin, game::{components::CardDeck, GamePlugin}, networking::MyNetworkingPlugin, setup, AppState};
 
 /*
     Currently based on Matchbox Guide:
@@ -9,14 +9,20 @@ use three_card::{dev_tools::DevToolsPlugin, game::{components::{Card, CardDeck},
  */
 
 // Main Priorities!!
-// TODO Properly Integrate PlayerTurn, Peer ID, and Player together for connection and card display/placement
-// TODO send player turn update from each client to each other (only if it's your turn can you request the next turn)
+// TODO how to select cards to play?
+// TODO apply game logic before allowing player to play cards
+// TODO allow for player to pickup from Deck whenever (if less than 3 in hand)
+// TODO utilize faceup cards when out of hand cards and deck is empty
+// TODO utilize facedown cards when out of hand cards and out of faceup cards
+// TODO show facedown card shorlty after play attempt
+// TODO win condition if player is out of Hand Cards, Faceup Cards, Facedown Cards, and Deck Cards
 
 // others
-// TODO: highlight selected card(s)
-// TODO: only display card change if there is a change (Changed<>)
-// TODO: add player turn notification (Arrow, highlights, or something green)
-// TODO: Iterate over each type of card to display (optimization)
+// TODO rework AppState and DeckState to properly utilze each
+// TODO highlight selected card(s)
+// TODO only display card change if there is a change (Changed<>)
+// TODO add player turn notification (Arrow, highlights, or something green)
+// TODO Iterate over each type of card to display (optimization)
 
 fn main() {
     App::new()
@@ -45,10 +51,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use three_card::game::components::{CardVal, Suit};
-
-    use super::*;
-
+    use three_card::game::components::{Card, CardVal, Suit};
+    
     #[test]
     pub fn test_ordering() {
         let mut cards = vec![

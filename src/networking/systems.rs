@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_matchbox::{prelude::PeerId, MatchboxSocket};
+use bevy_matchbox::MatchboxSocket;
 
 use crate::{game::components::{LocalPlayers, Player, PlayerTurn}, AppState};
 
@@ -15,10 +15,10 @@ pub fn start_matchbox_socket(
 
 pub fn wait_for_players(
     mut commands: Commands,
-    mut socket: ResMut<MatchboxSocket>,
     mut next_matchmaking_state: ResMut<NextState<AppState>>,
     mut players_query: Query<&mut Player>,
     mut player_turn: ResMut<PlayerTurn>,
+    mut socket: ResMut<MatchboxSocket>,
 ) {
     if socket.get_channel(0).is_err() {
         info!("socket error: {:?}", socket);
@@ -64,60 +64,74 @@ pub fn wait_for_players(
 
 pub fn rx_msg(
     mut socket: ResMut<MatchboxSocket>,
-    local_player: Res<LocalPlayers>
+    local_player: Res<LocalPlayers>,
+    mut player_turn: ResMut<PlayerTurn>,
+
 ) {
-    for (peer, state) in socket.update_peers() {
-        info!("{peer}: {state:?}");
-    }
-    
-    let mut channel = socket.get_channel_mut(0).expect("no channel 0..");
-    for (id, msg) in channel.receive() {
-        let decoded: PlayerCommand = bitcode::decode(&msg).expect("unable to decode PlayerCommand");
-        match decoded.action {
-            ActionType::PickupPile => {
-                info!("msg from: {id}\nAction::PickupPile");
-            },
-            ActionType::PickupDeck => {
-                info!("msg from: {id}\nAction::PickupDeck");
-            },
-            ActionType::PlayCards => {
-                info!("msg from: {id}\nAction::PlayCards\nCards: {:?}",decoded.data.expect("no cards provided for PlayCards"));
-            },
+    // if other players turn then we listen for messages
+    if *local_player.0.first().unwrap() != player_turn.current_turn() {
+        socket.update_peers();
+        
+        let channel = socket.get_channel_mut(0).expect("no channel 0..");
+        for (id, msg) in channel.receive() {
+            let decoded: PlayerCommand = bitcode::decode(&msg).expect("unable to decode PlayerCommand");
+            match decoded.action {
+                ActionType::PickupPile => {
+                    info!("msg from: {id}\nAction::PickupPile");
+                    player_turn.next();
+                },
+                ActionType::PickupDeck => {
+                    info!("msg from: {id}\nAction::PickupDeck");
+                    player_turn.next();
+                },
+                ActionType::PlayCards => {
+                    info!("msg from: {id}\nAction::PlayCards\nCards: {:?}",decoded.data.expect("no cards provided for PlayCards"));
+                    player_turn.next();
+                },
+            }
         }
     }
 }
 
 pub fn tx_msg(
-    mut socket: ResMut<MatchboxSocket>,
     button: Res<ButtonInput<KeyCode>>,
+    local_player: Res<LocalPlayers>,
+    mut player_turn: ResMut<PlayerTurn>,
+    mut socket: ResMut<MatchboxSocket>,
 ) {
-    if button.just_pressed(KeyCode::Digit1) { // PlayCards Command
-        let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
-        let channel = socket.get_channel_mut(0).expect("no channel 0..");
-        let msg = PlayerCommand {
-            action: ActionType::PlayCards,
-            data: Some(vec![0,1,2]),
-        };
-        channel.send(bitcode::encode(&msg).into(), peer);
-    }
-    
-    if button.just_pressed(KeyCode::Digit2) { // PickupDeck Command
-        let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
-        let channel = socket.get_channel_mut(0).expect("no channel 0..");
-        let msg = PlayerCommand {
-            action: ActionType::PickupDeck,
-            ..default()
-        };
-        channel.send(bitcode::encode(&msg).into(), peer);
-    }
+    if *local_player.0.first().unwrap() == player_turn.current_turn() {
 
-    if button.just_pressed(KeyCode::Digit3) { // PickupPile Command
-        let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
-        let channel = socket.get_channel_mut(0).expect("no channel 0..");
-        let msg = PlayerCommand {
-            action: ActionType::PickupPile,
-            ..default()
-        };
-        channel.send(bitcode::encode(&msg).into(), peer);
+        if button.just_pressed(KeyCode::KeyC) { // PlayCards Command
+            let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
+            let channel = socket.get_channel_mut(0).expect("no channel 0..");
+            let msg = PlayerCommand {
+                action: ActionType::PlayCards,
+                data: Some(vec![0,1,2]),
+            };
+            channel.send(bitcode::encode(&msg).into(), peer);
+            player_turn.next();
+        }
+        
+        if button.just_pressed(KeyCode::KeyD) { // PickupDeck Command
+            let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
+            let channel = socket.get_channel_mut(0).expect("no channel 0..");
+            let msg = PlayerCommand {
+                action: ActionType::PickupDeck,
+                ..default()
+            };
+            channel.send(bitcode::encode(&msg).into(), peer);
+            player_turn.next();
+        }
+
+        if button.just_pressed(KeyCode::KeyP) { // PickupPile Command
+            let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
+            let channel = socket.get_channel_mut(0).expect("no channel 0..");
+            let msg = PlayerCommand {
+                action: ActionType::PickupPile,
+                ..default()
+            };
+            channel.send(bitcode::encode(&msg).into(), peer);
+            player_turn.next();
+        }
     }
 }

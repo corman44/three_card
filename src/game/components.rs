@@ -214,4 +214,8 @@ impl PlayerTurn {
             self.turn = 0;
         }
     }
+
+    pub fn current_turn(&self) -> u64 {
+        self.ids[self.turn]
+    }
 }
