@@ -3,12 +3,12 @@ use bevy_matchbox::MatchboxSocket;
 
 use crate::{game::components::{LocalPlayers, Player, PlayerTurn}, AppState};
 
-use super::{components::{ActionType, PlayerCommand}, SessionSeed};
+use super::{components::{ActionType, GameRoom, PlayerCommand}, SessionSeed};
 
 pub fn start_matchbox_socket(
     mut commands: Commands,
 ) {
-    let room_url = "ws://192.168.2.44:3536/three_card?next=2";
+    let room_url = "ws://127.0.0.1:3536/three_card?next=2";
     info!("connecting to matchbox server: {room_url}");
     commands.insert_resource(MatchboxSocket::new_unreliable(room_url));
 }
@@ -58,6 +58,9 @@ pub fn wait_for_players(
     }
     
     commands.insert_resource(LocalPlayers{ 0: vec![id.0 ^ id.1]});
+    commands.insert_resource(GameRoom {
+        
+    });
     commands.insert_resource(SessionSeed(seed));
     next_matchmaking_state.set(AppState::PlayersMatched);
 }
@@ -113,11 +116,11 @@ pub fn tx_msg(
             player_turn.next();
         }
         
-        if button.just_pressed(KeyCode::KeyD) { // PickupDeck Command
+        if button.just_pressed(KeyCode::KeyP) { // PickupPile Command
             let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
             let channel = socket.get_channel_mut(0).expect("no channel 0..");
             let msg = PlayerCommand {
-                action: ActionType::PickupDeck,
+                action: ActionType::PickupPile,
                 ..default()
             };
             channel.send(bitcode::encode(&msg).into(), peer);
@@ -126,23 +129,24 @@ pub fn tx_msg(
 
     }
 
-    if button.just_pressed(KeyCode::KeyP) { // PickupPile Command
+    if button.just_pressed(KeyCode::KeyD) { // PickupDeck Command
         // TODO check if LP Hand is < 3 then allow for card pickup
         for player in players_query.iter() {
             if player.handle == *local_player.0.first().unwrap() { // found LP
-                if player.hand.len() < 3 {
-                    // TODO send message and pickup X cards
+                if player.hand.len() <= 3 {
+                    let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
+                    let channel = socket.get_channel_mut(0).expect("no channel 0..");
+                    let msg = PlayerCommand {
+                        action: ActionType::PickupDeck,
+                        ..default()
+                    };
+                    channel.send(bitcode::encode(&msg).into(), peer);
+
+                    // TODO pickup X cards
+
                 }
             }
         }
 
-        let peer = socket.connected_peers().into_iter().next().expect("no connected peers");
-        let channel = socket.get_channel_mut(0).expect("no channel 0..");
-        let msg = PlayerCommand {
-            action: ActionType::PickupPile,
-            ..default()
-        };
-        channel.send(bitcode::encode(&msg).into(), peer);
-        player_turn.next();
     }
 }

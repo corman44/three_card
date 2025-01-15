@@ -16,3 +16,22 @@ pub struct PlayerCommand {
     pub action: ActionType,
     pub data: Option<Vec<u8>>,
 }
+
+#[derive(Debug, Resource)]
+pub struct GameRoom {
+
+}
+
+impl GameRoom {
+    fn new() -> Self {
+        GameRoom {}
+    }
+
+    fn send() {
+
+    }
+
+    fn receive() {
+
+    }
+}

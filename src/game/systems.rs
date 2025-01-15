@@ -255,3 +255,19 @@ pub fn select_cards(
         selected_cards.0.push(key.to_digit());
     }
 }
+
+pub fn play_cards(
+    local_players: Res<LocalPlayers>,
+    player_turn: Res<PlayerTurn>,
+    mut selected_cards: ResMut<SelectedCards>,
+    button: Res<ButtonInput<KeyCode>>,
+) {
+    /* Thinking about Logic and networking strcuture
+    - can have Game Logic then event to trigger Networking Message
+      - ie. player attempts card play and logic is applied, if works then event is sent to the system and 
+        picked up by the Networking Library to send
+
+    Create a GameRoom Resource
+    - 
+     */
+}
