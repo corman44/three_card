@@ -1,9 +1,19 @@
+use bevy::prelude::*;
 
-use bevy::{prelude::*, utils::info};
-
-use crate::{networking::SessionSeed, AppState};
-
-use super::{components::{Card, CardVal, Deck, KeyToDigit, LPHandCards, LPTableCards, LocalPlayers, Player, PlayerTurnText, RPHandCards, RPTableCards, SelectedCards, ShortWait, Suit}, CardDeck, DeckState,  PlayerTurn};
+use super::{
+    components::{
+        Card, CardVal, Deck, KeyToDigit, LPHandCards, LPTableCards, LocalPlayers, Pile, Player,
+        PlayerTurnState, PlayerTurnText, RPHandCards, RPTableCards, SelectedCards, ShortWait, Suit,
+    },
+    CardDeck, DeckState, PlayerTurn,
+};
+use crate::{
+    networking::{
+        components::{ActionType, GameRoom, PlayerCommand},
+        SessionSeed,
+    },
+    AppState,
+};
 
 pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
@@ -14,7 +24,6 @@ pub fn setup(
     asset_server: Res<AssetServer>,
     mut next_app_state: ResMut<NextState<AppState>>,
 ) {
-
     // spawn player1
     commands.spawn((
         Node::default(),
@@ -23,7 +32,7 @@ pub fn setup(
             ..default()
         },
     ));
-   
+
     // spawn player2
     commands.spawn((
         Node::default(),
@@ -62,7 +71,7 @@ pub fn setup(
                 scale: Vec3::new(CARD_SCALE, CARD_SCALE, 1.),
                 ..default()
             },
-            LPTableCards(idx)
+            LPTableCards(idx),
         ));
 
         // RP Faceup
@@ -77,7 +86,7 @@ pub fn setup(
                 scale: Vec3::new(CARD_SCALE, CARD_SCALE, 1.),
                 ..default()
             },
-            RPTableCards(idx)
+            RPTableCards(idx),
         ));
 
         // RP Card
@@ -92,7 +101,7 @@ pub fn setup(
         },
         Visibility::Hidden,
         Transform::from_translation(Vec3::new(0., 0., 0.)),
-        Deck
+        Deck,
     ));
 
     // Spawn Player Turn Text
@@ -104,7 +113,7 @@ pub fn setup(
             ..Default::default()
         },
         Transform {
-            translation: Vec3::new(20., 250., 1. ),
+            translation: Vec3::new(20., 250., 1.),
             ..default()
         },
         Visibility::Hidden,
@@ -126,9 +135,21 @@ pub fn deal_cards(
 
     // for each player in the game, deal 3 cards facedown, 3 faceup, 3 to the hand
     for mut player in players.iter_mut() {
-        player.facedown_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
-        player.faceup_cards = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
-        player.hand = vec![card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap(), card_deck.cards.cards.pop().unwrap()];
+        player.facedown_cards = vec![
+            card_deck.cards.cards.pop().unwrap(),
+            card_deck.cards.cards.pop().unwrap(),
+            card_deck.cards.cards.pop().unwrap(),
+        ];
+        player.faceup_cards = vec![
+            card_deck.cards.cards.pop().unwrap(),
+            card_deck.cards.cards.pop().unwrap(),
+            card_deck.cards.cards.pop().unwrap(),
+        ];
+        player.hand = vec![
+            card_deck.cards.cards.pop().unwrap(),
+            card_deck.cards.cards.pop().unwrap(),
+            card_deck.cards.cards.pop().unwrap(),
+        ];
         player.hand.sort();
     }
 
@@ -143,7 +164,7 @@ pub fn deal_cards(
 pub fn short_wait(
     time: Res<Time>,
     mut short_wait: ResMut<ShortWait>,
-    mut next_deck_state: ResMut<NextState<DeckState>>
+    mut next_deck_state: ResMut<NextState<DeckState>>,
 ) {
     if short_wait.timer.tick(time.delta()).just_finished() {
         next_deck_state.set(DeckState::Dealt);
@@ -157,9 +178,19 @@ pub fn display_table_cards(
     local_players: Res<LocalPlayers>,
     player_query: Query<&Player>,
     mut next_deck_state: ResMut<NextState<DeckState>>,
-    mut lp_tablecards_image_query: Query<(&mut Sprite, &mut Visibility), (With<LPTableCards>, Without<LPHandCards>, Without<RPTableCards>)>,
-    mut lp_hand_image_query: Query<(&mut Sprite, &mut Visibility), (With<LPHandCards>, Without<LPTableCards>, Without<RPTableCards>)>,
-    mut rp_tablecards_image_query: Query<(&mut Sprite, &mut Visibility), (With<RPTableCards>, Without<LPHandCards>, Without<LPTableCards>)>,
+    mut lp_hand_image_query: Query<
+        (&mut Sprite, &mut Visibility),
+        (With<LPHandCards>, Without<LPTableCards>),
+    >,
+    mut lp_tablecards_image_query: Query<(&mut Sprite, &mut Visibility), With<LPTableCards>>,
+    mut rp_tablecards_image_query: Query<
+        (&mut Sprite, &mut Visibility),
+        (
+            With<RPTableCards>,
+            Without<LPHandCards>,
+            Without<LPTableCards>,
+        ),
+    >,
 ) {
     dbg!(&local_players.0);
     dbg!(&player_query.iter().map(|a| a.handle).collect::<Vec<_>>());
@@ -172,28 +203,35 @@ pub fn display_table_cards(
             }
 
             // show faceup table cards
-            for (i, (mut image_handle, mut vis)) in lp_tablecards_image_query.iter_mut().enumerate() {
+            for (i, (mut image_handle, mut vis)) in lp_tablecards_image_query.iter_mut().enumerate()
+            {
                 *image_handle = card_to_asset(&asset_server, player.clone().faceup_cards[i]);
                 *vis = Visibility::Visible;
             }
-        }
-        else {
-            for (i, (mut image_handle, mut vis)) in rp_tablecards_image_query.iter_mut().enumerate() {
+        } else {
+            for (i, (mut image_handle, mut vis)) in rp_tablecards_image_query.iter_mut().enumerate()
+            {
                 *image_handle = card_to_asset(&asset_server, player.clone().faceup_cards[i]);
                 *vis = Visibility::Visible;
             }
         }
     }
-    next_deck_state.set(DeckState::Display)
+    next_deck_state.set(DeckState::Gameplay)
 }
 
 pub fn display_turn(
     local_players: Res<LocalPlayers>,
     player_turn: Res<PlayerTurn>,
-    mut turn_text_query: Query<(&mut Visibility, &mut Text2d, &mut TextColor), With<PlayerTurnText>>,
-    mut next_deck_state: ResMut<NextState<DeckState>>,
+    mut turn_text_query: Query<
+        (&mut Visibility, &mut Text2d, &mut TextColor),
+        With<PlayerTurnText>,
+    >,
+    // mut next_deck_state: ResMut<NextState<DeckState>>,
 ) {
-    if local_players.0.contains(&(player_turn.ids[player_turn.turn] as u64)) {
+    if local_players
+        .0
+        .contains(&(player_turn.ids[player_turn.turn] as u64))
+    {
         let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
         *vis = Visibility::Visible;
         txt.0 = String::from("YOUR TURN");
@@ -205,14 +243,10 @@ pub fn display_turn(
         color.0 = Color::srgb(0.9, 0.9, 0.0);
     }
 
-    // info!("{:?}", turn_text_query.single().1);
-    next_deck_state.set(DeckState::Gameplay);
+    // next_deck_state.set(DeckState::Gameplay);
 }
 
-pub fn card_to_asset(
-    asset_server: &Res<AssetServer>,
-    card: Card,
-) -> Sprite {
+pub fn card_to_asset(asset_server: &Res<AssetServer>, card: Card) -> Sprite {
     let card_num: &str;
     let card_suit: &str;
 
@@ -238,36 +272,101 @@ pub fn card_to_asset(
         Suit::Diamond => card_suit = r"diamond\cardDiamonds_",
         Suit::Spade => card_suit = r"spade\cardSpades_",
     }
-    let card_asset = format!("{}{}{}",CARD_LOCATION,card_suit,card_num);
+    let card_asset = format!("{}{}{}", CARD_LOCATION, card_suit, card_num);
     asset_server.load(card_asset).into()
 }
 
 pub fn select_cards(
     local_players: Res<LocalPlayers>,
     player_turn: Res<PlayerTurn>,
+    player_query: Query<&Player>,
     mut selected_cards: ResMut<SelectedCards>,
     button: Res<ButtonInput<KeyCode>>,
 ) {
-    if button.any_just_pressed(
-        [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4, KeyCode::Digit5, KeyCode::Digit6, KeyCode::Digit7, KeyCode::Digit8, KeyCode::Digit9, KeyCode::Digit0]
-    ) {
-        let key = button.get_just_pressed().next().expect("expected button press..");
-        selected_cards.0.push(key.to_digit());
+    if button.any_just_pressed([
+        KeyCode::Digit1,
+        KeyCode::Digit2,
+        KeyCode::Digit3,
+        KeyCode::Digit4,
+        KeyCode::Digit5,
+        KeyCode::Digit6,
+        KeyCode::Digit7,
+        KeyCode::Digit8,
+        KeyCode::Digit9,
+        KeyCode::Digit0,
+    ]) {
+        let key = button
+            .get_just_pressed()
+            .next()
+            .expect("expected button press..").to_digit();
+        if !(key + 1 > player_query.iter().find(|p| p.handle == *local_players.0.first().unwrap()).unwrap().hand.len() as u8) {
+            if !selected_cards.cards.contains(&key) {
+                selected_cards.cards.insert(key);
+            } else {
+                selected_cards.cards.remove(&key);
+            }
+            dbg!(&selected_cards);
+        } else {
+            info!("Selected Card {} is out of range of Hand", key);
+        }
     }
 }
 
-pub fn play_cards(
+pub fn play_local_cards(
     local_players: Res<LocalPlayers>,
     player_turn: Res<PlayerTurn>,
     mut selected_cards: ResMut<SelectedCards>,
+    mut room: ResMut<GameRoom>,
     button: Res<ButtonInput<KeyCode>>,
+    mut players: Query<&mut Player>,
+    mut card_pile: ResMut<Pile>,
 ) {
-    /* Thinking about Logic and networking strcuture
-    - can have Game Logic then event to trigger Networking Message
-      - ie. player attempts card play and logic is applied, if works then event is sent to the system and 
-        picked up by the Networking Library to send
+    if button.just_pressed(KeyCode::KeyC) {
+        let mut player = players
+            .iter_mut()
+            .find(|p| p.handle == *local_players.0.first().unwrap())
+            .expect("no LP found");
+        let mut cards_to_play: Vec<Card> = vec![];
+        for (count, idx) in selected_cards.cards.clone().iter().enumerate() {
+            dbg!(&player.hand);
+            dbg!(&format!("count, idx: {}, {}", count, idx));
+            cards_to_play.push(player.hand.remove(*idx as usize - count));
+        }
 
-    Create a GameRoom Resource
-    - 
-     */
+        for card in cards_to_play {
+            card_pile.cards.push(card.to_num());
+        }
+
+        let cmd = PlayerCommand {
+            action: ActionType::PlayCards,
+            data: Some(selected_cards.cards.clone().iter().copied().collect::<Vec<u8>>()),
+        };
+        room.send(cmd);
+        // TODO Update displayed cards
+    }
 }
+
+pub fn rx_other_players(
+    mut room: ResMut<GameRoom>,
+    mut player_turn: ResMut<PlayerTurn>,
+    mut players_query: Query<&mut Player>,
+) {
+    room.socket.update_peers();
+    for (id, msg) in room.receive() {}
+}
+
+pub fn update_player_turn_state(
+    local_players: Res<LocalPlayers>,
+    player_turn: Res<PlayerTurn>,
+    mut player_turn_state: ResMut<NextState<PlayerTurnState>>,
+) {
+    if player_turn.is_changed() {
+        if *local_players.0.first().unwrap() == player_turn.current_turn() {
+            player_turn_state.set(PlayerTurnState::LocalPlayerTurn);
+        } else {
+            player_turn_state.set(PlayerTurnState::RemotPlayerTurn(player_turn.current_turn()));
+        }
+    }
+}
+
+fn play_cards() {}

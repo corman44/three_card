@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, collections::BTreeSet};
 use bevy::prelude::*;
 use rand::{seq::SliceRandom, SeedableRng};
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -97,16 +97,18 @@ pub struct RPHandCards(pub u8);
 #[derive(Debug, Clone, Component)]
 pub struct Deck;
 
-#[derive(Debug, Clone, Component)]
-pub struct Pile;
+#[derive(Debug, Clone, Resource, Default)]
+pub struct Pile{
+    pub cards: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Resource, Default)]
+pub struct DeadCards {
+    pub cards: Vec<Card>,
+}
 
 #[derive(Debug, Clone, Component)]
 pub struct PlayerTurnText;
-
-#[derive(Debug, Clone, Component)]
-pub struct DeadCards {
-    cards: Vec<Card>,
-}
 
 #[derive(Component, Clone, Default, Debug)]
 pub struct Player {
@@ -142,8 +144,8 @@ pub enum CardVal {
     Ten = 8,
     Jack = 9,
     Queen = 10,
-    King = 12,
-    Ace = 13,
+    King = 11,
+    Ace = 12,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -203,7 +205,9 @@ impl CardDeck {
 }
 
 #[derive(Debug, Default, Resource)]
-pub struct SelectedCards(pub Vec<u8>);
+pub struct SelectedCards{
+    pub cards: BTreeSet<u8>,
+}
 
 pub trait KeyToDigit {
     fn to_digit(&self) -> u8;
@@ -225,6 +229,13 @@ impl KeyToDigit for KeyCode {
             _ => panic!("Problems.."),
         }
     }
+}
+
+#[derive(Clone, Debug, Default, States, Hash, PartialEq, Eq)]
+pub enum PlayerTurnState {
+    #[default]
+    LocalPlayerTurn,
+    RemotPlayerTurn(u64),
 }
 
 #[derive(Resource, Default, Debug, PartialEq, Eq, Clone, Hash)]

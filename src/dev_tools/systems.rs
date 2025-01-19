@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_matchbox::{matchbox_socket::{WebRtcChannel, WebRtcSocket}, MatchboxSocket};
 
-use crate::{game::components::{DeckState, PlayerTurn}, AppState};
+use crate::{game::components::{DeadCards, DeckState, Pile, PlayerTurn}, networking::components::GameRoom, AppState};
 
 use super::component::DebugTimer;
 
@@ -16,9 +16,12 @@ pub fn handle_debug_timer(
 }
 
 pub fn print_state_changes(
-    deck_state: Res<State<DeckState>>,
     app_state: Res<State<AppState>>,
+    deck_state: Res<State<DeckState>>,
     player_turn: Res<PlayerTurn>,
+    pile: Res<Pile>,
+    dead_cards: Res<DeadCards>,
+
 ) {
     if deck_state.is_changed() {
         info!("Deck State::{:?}", deck_state.get());
@@ -31,15 +34,23 @@ pub fn print_state_changes(
     if player_turn.is_changed() {
         info!("PlayerTurn: {:?}", player_turn);
     }
+    
+    if pile.is_changed() {
+        info!("Pile: {:?}", pile.cards);
+    }
+    
+    if dead_cards.is_changed() {
+        info!("DeadCards: {:?}", dead_cards.cards);
+    }
 }
 
 pub fn print_networking_info(
-    socket: Res<MatchboxSocket>,
+    room: Res<GameRoom>,
     buttons: Res<ButtonInput<KeyCode>>,
 ) {
     if buttons.just_pressed(KeyCode::KeyN) {
-        let peers = socket.connected_peers().into_iter().collect::<Vec<_>>();
-        let channel = socket.channel(0);
+        let peers = room.socket.connected_peers().into_iter().collect::<Vec<_>>();
+        let channel = room.socket.channel(0);
         let config = channel.config();
         info!("**** Networking Debug Info ****");
         info!("Channel: {:?}", channel);
