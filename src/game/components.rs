@@ -1,17 +1,17 @@
-use std::{cmp::Ordering, collections::BTreeSet};
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashSet};
 use rand::{seq::SliceRandom, SeedableRng};
 use rand_xoshiro::Xoshiro256PlusPlus;
+use std::{cmp::Ordering, collections::BTreeSet};
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct  Card {
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Card {
     pub number: CardVal,
     pub suit: Suit,
 }
 
 impl PartialOrd for Card {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self.to_num().partial_cmp(&other.to_num()) {
+        match self.number.partial_cmp(&other.number) {
             Some(core::cmp::Ordering::Equal) => {}
             ord => return ord,
         }
@@ -21,32 +21,38 @@ impl PartialOrd for Card {
 
 impl Ord for Card {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.to_num().cmp(&other.to_num())
+        self.number.cmp(&other.number)
     }
-    
+
     fn max(self, other: Self) -> Self
     where
         Self: Sized,
     {
         std::cmp::max_by(self, other, Ord::cmp)
     }
-    
+
     fn min(self, other: Self) -> Self
     where
         Self: Sized,
     {
         std::cmp::min_by(self, other, Ord::cmp)
     }
-    
+
     fn clamp(self, min: Self, max: Self) -> Self
     where
         Self: Sized,
     {
         assert!(min <= max);
         if self.to_num() < 0 {
-            Self { number: CardVal::Two, suit: Suit::Club}
+            Self {
+                number: CardVal::Two,
+                suit: Suit::Club,
+            }
         } else if self.to_num() > 52 {
-            Self { number: CardVal::Ace, suit: Suit::Diamond}
+            Self {
+                number: CardVal::Ace,
+                suit: Suit::Diamond,
+            }
         } else {
             self
         }
@@ -54,19 +60,50 @@ impl Ord for Card {
 }
 
 impl Card {
+    pub fn from_u8(num: u8) -> Self {
+        Card {
+            number: {
+                match num % 13 {
+                    0 => CardVal::Two,
+                    1 => CardVal::Three,
+                    2 => CardVal::Four,
+                    3 => CardVal::Five,
+                    4 => CardVal::Six,
+                    5 => CardVal::Seven,
+                    6 => CardVal::Eight,
+                    7 => CardVal::Nine,
+                    8 => CardVal::Ten,
+                    9 => CardVal::Jack,
+                    10 => CardVal::Queen,
+                    11 => CardVal::King,
+                    12 => CardVal::Ace,
+                    _ => panic!("impossible card selection")
+                }
+            },
+            suit: {
+                match num / 13 {
+                    0 => Suit::Club,
+                    1 => Suit::Heart,
+                    2 => Suit::Spade,
+                    _ => Suit::Diamond,
+                }
+                
+            },
+        }
+    }
+
     pub fn to_num(&self) -> u8 {
         let mut out = 0;
         match self.suit {
             Suit::Heart => out += 13,
             Suit::Spade => out += 26,
             Suit::Diamond => out += 39,
-            _ => {},
+            _ => {}
         }
         out += self.number as u8;
         out
     }
 }
-
 
 #[derive(Resource)]
 pub struct ShortWait {
@@ -98,13 +135,13 @@ pub struct RPHandCards(pub u8);
 pub struct Deck;
 
 #[derive(Debug, Clone, Resource, Default)]
-pub struct Pile{
-    pub cards: Vec<u8>,
+pub struct Pile {
+    pub cards: Vec<Card>,
 }
 
 #[derive(Debug, Clone, Resource, Default)]
 pub struct DeadCards {
-    pub cards: Vec<Card>,
+    pub cards: HashSet<Card>,
 }
 
 #[derive(Debug, Clone, Component)]
@@ -115,7 +152,7 @@ pub struct Player {
     pub handle: u64,
     pub facedown_cards: Vec<Card>,
     pub faceup_cards: Vec<Card>,
-    pub hand: Vec<Card>,
+    pub hand: BTreeSet<Card>,
 }
 
 #[derive(Debug, Resource)]
@@ -131,7 +168,7 @@ pub enum DeckState {
     Display,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CardVal {
     Two = 0,
     Three = 1,
@@ -148,7 +185,7 @@ pub enum CardVal {
     Ace = 12,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Suit {
     Club,
     Heart,
@@ -168,7 +205,7 @@ pub enum CardLocation {
 }
 
 #[derive(Resource, Debug, Clone)]
-pub struct CardDeck{
+pub struct CardDeck {
     pub cards: CardGroup,
 }
 
@@ -179,9 +216,19 @@ impl Default for CardDeck {
 
         for &suit in &[Suit::Heart, Suit::Diamond, Suit::Club, Suit::Spade] {
             for &number in &[
-                CardVal::Two, CardVal::Three, CardVal::Four, CardVal::Five,
-                CardVal::Six, CardVal::Seven, CardVal::Eight, CardVal::Nine,
-                CardVal::Ten, CardVal::Jack, CardVal::Queen, CardVal::King, CardVal::Ace
+                CardVal::Two,
+                CardVal::Three,
+                CardVal::Four,
+                CardVal::Five,
+                CardVal::Six,
+                CardVal::Seven,
+                CardVal::Eight,
+                CardVal::Nine,
+                CardVal::Ten,
+                CardVal::Jack,
+                CardVal::Queen,
+                CardVal::King,
+                CardVal::Ace,
             ] {
                 deck.push(Card { number, suit });
             }
@@ -191,7 +238,7 @@ impl Default for CardDeck {
             cards: CardGroup {
                 cards: deck,
                 location: CardLocation::Deck,
-            }
+            },
         }
     }
 }
@@ -205,8 +252,8 @@ impl CardDeck {
 }
 
 #[derive(Debug, Default, Resource)]
-pub struct SelectedCards{
-    pub cards: BTreeSet<u8>,
+pub struct SelectedCards {
+    pub cards: BTreeSet<Card>,
 }
 
 pub trait KeyToDigit {
@@ -239,7 +286,7 @@ pub enum PlayerTurnState {
 }
 
 #[derive(Resource, Default, Debug, PartialEq, Eq, Clone, Hash)]
-pub struct PlayerTurn{
+pub struct PlayerTurn {
     pub ids: Vec<u64>,
     pub turn: usize,
 }

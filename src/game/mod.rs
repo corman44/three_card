@@ -3,7 +3,7 @@ pub mod systems;
 
 use bevy::prelude::*;
 use components::{CardDeck, DeadCards, DeckState, Pile, PlayerTurn, PlayerTurnState, SelectedCards};
-use systems::{deal_cards, display_table_cards, display_turn, play_local_cards, select_cards, setup, update_player_turn_state};
+use systems::{deal_cards, display_table_cards, display_turn, play_local_cards, rx_other_players, select_cards, setup, update_player_turn_state};
 
 use crate::AppState;
 
@@ -22,7 +22,7 @@ impl Plugin for GamePlugin {
             .add_systems(Startup, setup)
             .add_systems(OnEnter(AppState::PlayersMatched), deal_cards)
             .add_systems(OnEnter(DeckState::Dealt), (display_table_cards))
-            .add_systems(Update, (display_turn, select_cards, play_local_cards, update_player_turn_state).run_if(
+            .add_systems(Update, (display_turn, select_cards, play_local_cards, update_player_turn_state, rx_other_players).run_if(
                 in_state(DeckState::Gameplay)
             ))
             ;

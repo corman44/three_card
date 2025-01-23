@@ -59,3 +59,23 @@ pub fn print_networking_info(
 
     }
 }
+
+pub fn print_all_info(
+    app_state: Res<State<AppState>>,
+    buttons: Res<ButtonInput<KeyCode>>,
+    dead_cards: Res<DeadCards>,
+    deck_state: Res<State<DeckState>>,
+    player_turn: Res<PlayerTurn>,
+    pile: Res<Pile>,
+    room: Res<GameRoom>
+) {
+    if buttons.pressed(KeyCode::ShiftLeft) && buttons.just_pressed(KeyCode::KeyA) {
+        dbg!(&app_state);
+        dbg!(&buttons);
+        dbg!(&dead_cards);
+        dbg!(&deck_state);
+        dbg!(&player_turn);
+        dbg!(&pile);
+        dbg!(&room);
+    }
+}

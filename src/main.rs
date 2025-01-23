@@ -7,6 +7,7 @@ use three_card::{dev_tools::DevToolsPlugin, game::{components::CardDeck, GamePlu
  */
 
 // Main Priorities!!
+// TODO reorder cards to have same numbers next to eachother (it's not poker...)
 // TODO how to select cards to play?
 // TODO apply game logic before allowing player to play cards
 // TODO allow for player to pickup from Deck whenever (if less than 3 in hand)

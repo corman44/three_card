@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use bevy::prelude::*;
 
 use super::{
@@ -145,12 +147,9 @@ pub fn deal_cards(
             card_deck.cards.cards.pop().unwrap(),
             card_deck.cards.cards.pop().unwrap(),
         ];
-        player.hand = vec![
-            card_deck.cards.cards.pop().unwrap(),
-            card_deck.cards.cards.pop().unwrap(),
-            card_deck.cards.cards.pop().unwrap(),
-        ];
-        player.hand.sort();
+        player.hand.insert(card_deck.cards.cards.pop().unwrap());
+        player.hand.insert(card_deck.cards.cards.pop().unwrap());
+        player.hand.insert(card_deck.cards.cards.pop().unwrap());
     }
 
     // Workaround for not have LocalPlayer created yet...
@@ -197,8 +196,10 @@ pub fn display_table_cards(
     for player in player_query.iter() {
         if local_players.0.contains(&(player.handle as u64)) {
             // show hand
-            for (i, (mut image_handle, mut vis)) in lp_hand_image_query.iter_mut().enumerate() {
-                *image_handle = card_to_asset(&asset_server, player.clone().hand[i]);
+            for ((mut image_handle, mut vis), card) in
+                lp_hand_image_query.iter_mut().zip(player.hand.clone())
+            {
+                *image_handle = card_to_asset(&asset_server, card);
                 *vis = Visibility::Visible;
             }
 
@@ -298,14 +299,45 @@ pub fn select_cards(
         let key = button
             .get_just_pressed()
             .next()
-            .expect("expected button press..").to_digit();
-        if !(key + 1 > player_query.iter().find(|p| p.handle == *local_players.0.first().unwrap()).unwrap().hand.len() as u8) {
-            if !selected_cards.cards.contains(&key) {
-                selected_cards.cards.insert(key);
-            } else {
-                selected_cards.cards.remove(&key);
+            .expect("expected button press..")
+            .to_digit();
+        let lp = player_query
+            .iter()
+            .find(|p| p.handle == *local_players.0.first().unwrap())
+            .unwrap();
+        // check for player turn and card selected is in range
+        if !(key + 1 > lp.hand.len() as u8) && player_turn.current_turn() == lp.handle {
+            match lp.hand.iter().collect::<Vec<_>>().get(key as usize) {
+                Some(card) => {
+                    if selected_cards.cards.contains(card) {
+                        selected_cards.cards.remove(card);
+                        dbg!(&selected_cards);
+                    } else if selected_cards.cards.is_empty() {
+                        selected_cards.cards.insert(**card);
+                        dbg!(&selected_cards);
+                    } else if card.number
+                        == selected_cards
+                            .cards
+                            .first()
+                            .expect("expected card in selcted cards")
+                            .number
+                    {
+                        selected_cards.cards.insert(**card);
+                        dbg!(&selected_cards);
+                    } else {
+                        info!(
+                            "Selecting Card {:?} not possible due to already selected cards",
+                            *card
+                        );
+                    }
+                }
+                None => {
+                    dbg!(&format!("Error accessing lp.hand.get({})", key));
+                }
             }
-            dbg!(&selected_cards);
+            // dbg!(&selected_cards);
+        } else if player_turn.current_turn() != *local_players.0.first().unwrap() {
+            info!("Not your turn...");
         } else {
             info!("Selected Card {} is out of range of Hand", key);
         }
@@ -313,36 +345,57 @@ pub fn select_cards(
 }
 
 pub fn play_local_cards(
-    local_players: Res<LocalPlayers>,
-    player_turn: Res<PlayerTurn>,
-    mut selected_cards: ResMut<SelectedCards>,
-    mut room: ResMut<GameRoom>,
     button: Res<ButtonInput<KeyCode>>,
-    mut players: Query<&mut Player>,
     mut card_pile: ResMut<Pile>,
+    local_players: Res<LocalPlayers>,
+    mut players: Query<&mut Player>,
+    mut player_turn: ResMut<PlayerTurn>,
+    mut room: ResMut<GameRoom>,
+    mut selected_cards: ResMut<SelectedCards>,
 ) {
-    if button.just_pressed(KeyCode::KeyC) {
+    if button.just_pressed(KeyCode::KeyC) && player_turn.current_turn() == *local_players.0.first().unwrap() && !selected_cards.cards.is_empty() {
         let mut player = players
             .iter_mut()
             .find(|p| p.handle == *local_players.0.first().unwrap())
             .expect("no LP found");
-        let mut cards_to_play: Vec<Card> = vec![];
-        for (count, idx) in selected_cards.cards.clone().iter().enumerate() {
-            dbg!(&player.hand);
-            dbg!(&format!("count, idx: {}, {}", count, idx));
-            cards_to_play.push(player.hand.remove(*idx as usize - count));
-        }
+        let mut cards_to_play: Vec<Card> = selected_cards
+            .cards
+            .clone()
+            .iter()
+            .map(|c| *c)
+            .collect::<Vec<_>>();
 
-        for card in cards_to_play {
-            card_pile.cards.push(card.to_num());
+        if card_pile.cards.is_empty()
+            || selected_cards.cards.first().unwrap().number
+                >= card_pile.cards.last().unwrap().number
+        {
+            // play cards
+            for card in cards_to_play {
+                card_pile.cards.push(card);
+            }
+            info!("{:?}", card_pile);
+            let cmd = PlayerCommand {
+                action: ActionType::PlayCards,
+                data: Some(
+                    selected_cards
+                        .cards
+                        .clone()
+                        .iter()
+                        .copied()
+                        .map(|c| c.to_num())
+                        .collect::<Vec<u8>>(),
+                ),
+            };
+            room.send(cmd);
+            for card in selected_cards.cards.clone() {
+                player.hand.remove(&card);
+            }
+            selected_cards.cards.clear();
+            player_turn.next();
+            info!("Message sent to peers and Selected Cards Cleared");
+        } else {
+            info!("selected cards not playable: {:?}",selected_cards.cards);
         }
-
-        let cmd = PlayerCommand {
-            action: ActionType::PlayCards,
-            data: Some(selected_cards.cards.clone().iter().copied().collect::<Vec<u8>>()),
-        };
-        room.send(cmd);
-        // TODO Update displayed cards
     }
 }
 
@@ -352,7 +405,20 @@ pub fn rx_other_players(
     mut players_query: Query<&mut Player>,
 ) {
     room.socket.update_peers();
-    for (id, msg) in room.receive() {}
+    for (id, msg) in room.receive() {
+        match msg.action {
+            ActionType::PickupPile => {
+
+            },
+            ActionType::PickupDeck => {
+                
+            },
+            ActionType::PlayCards => {
+                dbg!("Player {} playing cards:\n{:?}",id,msg.data.unwrap());
+                player_turn.next();
+            },
+        }
+    }
 }
 
 pub fn update_player_turn_state(
