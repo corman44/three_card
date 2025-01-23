@@ -326,8 +326,9 @@ pub fn select_cards(
                         dbg!(&selected_cards);
                     } else {
                         info!(
-                            "Selecting Card {:?} not possible due to already selected cards",
-                            *card
+                            "Selecting Card: {:?} not possible due to already Selected Card: {:?}",
+                            *card,
+                            selected_cards.cards,
                         );
                     }
                 }
