@@ -9,3 +9,4 @@ out/three_card_bg.wasm.d.ts
 out/three_card.d.ts
 out/three_card.js
 Cargo.lock
+.aider*

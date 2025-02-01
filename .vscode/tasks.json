@@ -57,6 +57,21 @@
 				"focus": false,
 				"panel": "new"
 			}
-		}
+		},
+		{
+			"label": "Start Aider",
+			"type": "shell",
+			"command": "python -m aider --model ollama/deepseek-coder-v2",
+			"group": {
+				"kind": "none",
+				"isDefault": false
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new"
+			}
+		},
 	]
 }
