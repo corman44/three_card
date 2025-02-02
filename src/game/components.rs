@@ -253,7 +253,17 @@ impl CardDeck {
 
 #[derive(Debug, Default, Resource)]
 pub struct SelectedCards {
-    pub cards: BTreeSet<Card>,
+    pub cards: HashSet<Card>,
+}
+
+impl SelectedCards {
+    pub fn value(&self) -> Option<CardVal> {
+        if let Some(card) = self.cards.iter().next() {
+            Some(card.number)
+        } else {
+            None
+        }
+    }
 }
 
 pub trait KeyToDigit {

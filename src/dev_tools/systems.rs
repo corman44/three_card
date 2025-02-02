@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_matchbox::{matchbox_socket::{WebRtcChannel, WebRtcSocket}, MatchboxSocket};
 
 use crate::{game::components::{DeadCards, DeckState, Pile, Player, PlayerTurn}, networking::components::GameRoom, AppState};
 
@@ -65,16 +64,18 @@ pub fn print_all_info(
     buttons: Res<ButtonInput<KeyCode>>,
     dead_cards: Res<DeadCards>,
     deck_state: Res<State<DeckState>>,
-    player: Query<&Player>,
+    players: Query<&Player>,
     player_turn: Res<PlayerTurn>,
     pile: Res<Pile>,
-    room: Res<GameRoom>
+    // room: Res<GameRoom>
 ) {
     if buttons.pressed(KeyCode::ShiftLeft) && buttons.just_pressed(KeyCode::KeyA) {
         dbg!(&app_state);
         dbg!(&deck_state);
         dbg!(&dead_cards);
-        dbg!(&player);
+        for player in players.iter() {
+            dbg!(&player);
+        }
         dbg!(&player_turn);
         dbg!(&pile);
         // dbg!(&room);
