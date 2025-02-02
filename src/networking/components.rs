@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_matchbox::{prelude::PeerId, MatchboxSocket};
 use bitcode::{Encode, Decode};
 
-#[derive(Debug, Encode, Decode, Default)]
+#[derive(Debug, Encode, Decode, Default, Clone)]
 pub enum ActionType {
     PickupPile,
     #[default]
@@ -12,7 +12,7 @@ pub enum ActionType {
 }
 
 /// informs peers of action
-#[derive(Debug, Encode, Decode, Default)]
+#[derive(Debug, Encode, Decode, Default,Clone)]
 pub struct PlayerCommand {
     pub action: ActionType,
     pub data: Option<Vec<u8>>,

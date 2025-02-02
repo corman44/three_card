@@ -1,6 +1,4 @@
-use std::collections::BTreeSet;
-
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashSet};
 
 use super::{
     components::{
@@ -231,20 +229,21 @@ pub fn display_turn(
 ) {
     if local_players
         .0
-        .contains(&(player_turn.ids[player_turn.turn] as u64))
+        .contains(&(player_turn.current_turn() as u64))
+        && player_turn.is_changed()
     {
         let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
         *vis = Visibility::Visible;
         txt.0 = String::from("YOUR TURN");
         color.0 = Color::srgb(0.294, 0.969, 0.337);
-    } else {
+        info!("PlayerTurnText: Your Turn");
+    } else if player_turn.is_changed() {
         let (mut vis, mut txt, mut color) = turn_text_query.single_mut();
         *vis = Visibility::Visible;
         txt.0 = String::from("OTHER PLAYERS TURN..");
         color.0 = Color::srgb(0.9, 0.9, 0.0);
+        info!("PlayerTurnText: Other Players Turn");
     }
-
-    // next_deck_state.set(DeckState::Gameplay);
 }
 
 pub fn card_to_asset(asset_server: &Res<AssetServer>, card: Card) -> Sprite {
@@ -319,6 +318,7 @@ pub fn select_cards(
                         == selected_cards
                             .cards
                             .iter()
+                            .map(|c| *c)
                             .collect::<Vec<Card>>()
                             .first()
                             .expect("expected card in selcted cards")
@@ -351,10 +351,10 @@ pub fn play_cards(
     player: &mut Player,
     player_turn: &mut PlayerTurn,
     room: Option<&mut GameRoom>,
-    selected_cards: &mut Vec<Card>,
+    selected_cards: &mut HashSet<Card>,
 ) {
-    // check if sending or rx
     if let Some(room) = room {
+        // sending from LocalPlayer
         let cmd = PlayerCommand {
             action: ActionType::PlayCards,
             data: Some(
@@ -368,11 +368,12 @@ pub fn play_cards(
         };
         room.send(cmd);
     }
+
     // play cards
     for card in selected_cards.clone() {
         card_pile.cards.push(card);
     }
-    for card in selected_cards {
+    for card in selected_cards.iter() {
         player.hand.remove(&card);
     }
     selected_cards.clear();
@@ -388,9 +389,10 @@ pub fn rx_other_players(
     mut selected_cards: ResMut<SelectedCards>,
 ) {
     room.socket.update_peers();
-    for (id, msg) in room.receive() {
+    for (id, mut msg) in room.receive() {
         match msg.action {
             ActionType::PickupPile => {
+                info!("PickupPile Rx'd from: {:?}", id);
                 let mut player = players_query
                     .iter_mut()
                     .find(|p| p.handle == id.into_u64())
@@ -402,9 +404,9 @@ pub fn rx_other_players(
                     None,
                     &mut selected_cards,
                 );
-                player_turn.next();
             }
             ActionType::PickupDeck => {
+                info!("PickupDeck Rx'd from: {:?}", id);
                 let mut player = players_query
                     .iter_mut()
                     .find(|p| p.handle == id.into_u64())
@@ -412,18 +414,24 @@ pub fn rx_other_players(
                 pickup_deck(&mut card_deck, &mut player, None, &mut selected_cards);
             }
             ActionType::PlayCards => {
-                dbg!(&format!("Player {} playing cards: 
-                {:?}", id.into_u64(), msg.data.unwrap()));
+                info!("Player {} playing cards: {:?}",
+                    id.into_u64(),
+                    &msg.data
+                );
                 let mut player = players_query
                     .iter_mut()
                     .find(|p| p.handle == id.into_u64())
                     .expect("unable to find player");
+                let mut selected_cards = msg.data.expect("no rx'd data found")
+                    .iter()
+                    .map(|c| Card::from_u8(*c))
+                    .collect::<HashSet<Card>>();
                 play_cards(
                     &mut card_pile,
                     &mut player,
                     &mut player_turn,
                     None,
-                    &mut selected_cards
+                    &mut selected_cards,
                 );
             }
         }
@@ -454,11 +462,11 @@ pub fn pickup_pile(
     for card in card_pile.cards.clone() {
         player.hand.insert(card);
     }
-    selected_cards.cards.clear();
     card_pile.cards.clear();
     player_turn.next();
 
     if let Some(room) = room {
+        selected_cards.cards.clear();
         room.send(PlayerCommand {
             action: ActionType::PickupPile,
             data: None,
@@ -499,7 +507,12 @@ pub fn monitor_lp_inputs(
             .find(|p| p.handle == *local_players.0.first().unwrap())
             .expect("no player found");
         if player.hand.len() < 3 {
-            pickup_deck(&mut card_deck, &mut player, Some(&mut room), &mut selected_cards)
+            pickup_deck(
+                &mut card_deck,
+                &mut player,
+                Some(&mut room),
+                &mut selected_cards,
+            )
         }
     }
 
@@ -514,7 +527,7 @@ pub fn monitor_lp_inputs(
             .expect("no player found");
 
         if card_pile.cards.is_empty()
-            || selected_cards.cards.first().unwrap().number
+            || selected_cards.value().expect("no selected cards found")
                 >= card_pile.cards.last().unwrap().number
         {
             play_cards(
@@ -522,7 +535,7 @@ pub fn monitor_lp_inputs(
                 &mut player,
                 &mut player_turn,
                 Some(&mut room),
-                &mut selected_cards,
+                &mut selected_cards.cards,
             );
         }
     }
