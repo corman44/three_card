@@ -11,17 +11,26 @@ pub struct Card {
 
 impl PartialOrd for Card {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let mut ret;
         match self.number.partial_cmp(&other.number) {
-            Some(core::cmp::Ordering::Equal) => {}
-            ord => return ord,
+            Some(core::cmp::Ordering::Equal) => ret = Some(Ordering::Equal),
+            ord => ret = ord,
         }
-        self.suit.partial_cmp(&other.suit)
+        if ret.unwrap() == Ordering::Equal {
+            let ret = self.suit.partial_cmp(&other.suit);
+        }
+        info!("{:?}",ret);
+        return ret
     }
 }
 
 impl Ord for Card {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.number.cmp(&other.number)
+        match self.number.cmp(&other.number) {
+            Ordering::Equal => {},
+            ord => return ord,
+        }
+        self.suit.cmp(&other.suit)
     }
 
     fn max(self, other: Self) -> Self

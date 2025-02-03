@@ -129,6 +129,7 @@ pub fn deal_cards(
     mut next_deck_state: ResMut<NextState<DeckState>>,
     sesh_seed: Res<SessionSeed>,
 ) {
+
     // first shuffle the deck
     card_deck.shuffle(**sesh_seed);
     next_deck_state.set(DeckState::Shuffled);
@@ -140,14 +141,21 @@ pub fn deal_cards(
             card_deck.cards.cards.pop().unwrap(),
             card_deck.cards.cards.pop().unwrap(),
         ];
+
         player.faceup_cards = vec![
             card_deck.cards.cards.pop().unwrap(),
             card_deck.cards.cards.pop().unwrap(),
             card_deck.cards.cards.pop().unwrap(),
         ];
-        player.hand.insert(card_deck.cards.cards.pop().unwrap());
-        player.hand.insert(card_deck.cards.cards.pop().unwrap());
-        player.hand.insert(card_deck.cards.cards.pop().unwrap());
+
+        let card1 = card_deck.cards.cards.pop().unwrap();
+        let card2 = card_deck.cards.cards.pop().unwrap();
+        let card3 = card_deck.cards.cards.pop().unwrap();
+        let first = player.hand.insert(card1);
+        let second = player.hand.insert(card2);
+        let third = player.hand.insert(card3);
+        info!("{:?} {:?} {:?}", card1, card2, card3);
+        info!("{} {} {}", first, second, third);
     }
 
     // Workaround for not have LocalPlayer created yet...
@@ -414,15 +422,14 @@ pub fn rx_other_players(
                 pickup_deck(&mut card_deck, &mut player, None, &mut selected_cards);
             }
             ActionType::PlayCards => {
-                info!("Player {} playing cards: {:?}",
-                    id.into_u64(),
-                    &msg.data
-                );
+                info!("Player {} playing cards: {:?}", id.into_u64(), &msg.data);
                 let mut player = players_query
                     .iter_mut()
                     .find(|p| p.handle == id.into_u64())
                     .expect("unable to find player");
-                let mut selected_cards = msg.data.expect("no rx'd data found")
+                let mut selected_cards = msg
+                    .data
+                    .expect("no rx'd data found")
                     .iter()
                     .map(|c| Card::from_u8(*c))
                     .collect::<HashSet<Card>>();

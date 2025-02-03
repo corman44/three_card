@@ -7,7 +7,6 @@ use three_card::{dev_tools::DevToolsPlugin, game::{components::CardDeck, GamePlu
  */
 
 // Main Priorities!!
-// FIXME Pile and Hands are not updated when remote player plays card (and picks up)
 // TODO utilize faceup cards when out of hand cards and deck is empty
 // TODO utilize facedown cards when out of hand cards and out of faceup cards
 // TODO show facedown card shorlty after play attempt
