@@ -2,8 +2,9 @@ use bevy::{prelude::*, utils::HashSet};
 
 use super::{
     components::{
-        Card, CardVal, Deck, KeyToDigit, LPHandCards, LPTableCards, LocalPlayers, Pile, Player,
-        PlayerTurnState, PlayerTurnText, RPHandCards, RPTableCards, SelectedCards, ShortWait, Suit,
+        Card, CardVal, DeadCards, Deck, KeyToDigit, LPHandCards, LPTableCards, LocalPlayers, Pile,
+        Player, PlayerTurnState, PlayerTurnText, RPHandCards, RPTableCards, SelectedCards,
+        ShortWait, Suit,
     },
     CardDeck, DeckState, PlayerTurn,
 };
@@ -19,11 +20,7 @@ pub const CARD_LOCATION: &str = r"normal_cards\individual\";
 pub const CARD_BACK_LOACTION: &str = r"normal_cards\individual\card back\cardBackGreen.png";
 pub const CARD_SCALE: f32 = 0.15;
 
-pub fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut next_app_state: ResMut<NextState<AppState>>,
-) {
+pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // spawn player1
     commands.spawn((
         Node::default(),
@@ -118,8 +115,6 @@ pub fn setup(
         },
         Visibility::Hidden,
     ));
-
-    // next_app_state.set(AppState::GameStart);
 }
 
 pub fn deal_cards(
@@ -129,7 +124,6 @@ pub fn deal_cards(
     mut next_deck_state: ResMut<NextState<DeckState>>,
     sesh_seed: Res<SessionSeed>,
 ) {
-
     // first shuffle the deck
     card_deck.shuffle(**sesh_seed);
     next_deck_state.set(DeckState::Shuffled);
@@ -354,43 +348,10 @@ pub fn select_cards(
     }
 }
 
-pub fn play_cards(
-    card_pile: &mut Pile,
-    player: &mut Player,
-    player_turn: &mut PlayerTurn,
-    room: Option<&mut GameRoom>,
-    selected_cards: &mut HashSet<Card>,
-) {
-    if let Some(room) = room {
-        // sending from LocalPlayer
-        let cmd = PlayerCommand {
-            action: ActionType::PlayCards,
-            data: Some(
-                selected_cards
-                    .clone()
-                    .iter()
-                    .copied()
-                    .map(|c| c.to_num())
-                    .collect::<Vec<u8>>(),
-            ),
-        };
-        room.send(cmd);
-    }
-
-    // play cards
-    for card in selected_cards.clone() {
-        card_pile.cards.push(card);
-    }
-    for card in selected_cards.iter() {
-        player.hand.remove(&card);
-    }
-    selected_cards.clear();
-    player_turn.next();
-}
-
 pub fn rx_other_players(
     mut card_deck: ResMut<CardDeck>,
     mut card_pile: ResMut<Pile>,
+    mut dead_cards: ResMut<DeadCards>,
     mut player_turn: ResMut<PlayerTurn>,
     mut players_query: Query<&mut Player>,
     mut room: ResMut<GameRoom>,
@@ -435,6 +396,7 @@ pub fn rx_other_players(
                     .collect::<HashSet<Card>>();
                 play_cards(
                     &mut card_pile,
+                    &mut dead_cards,
                     &mut player,
                     &mut player_turn,
                     None,
@@ -459,32 +421,11 @@ pub fn update_player_turn_state(
     }
 }
 
-pub fn pickup_pile(
-    card_pile: &mut Pile,
-    player: &mut Player,
-    player_turn: &mut PlayerTurn,
-    room: Option<&mut GameRoom>,
-    selected_cards: &mut SelectedCards,
-) {
-    for card in card_pile.cards.clone() {
-        player.hand.insert(card);
-    }
-    card_pile.cards.clear();
-    player_turn.next();
-
-    if let Some(room) = room {
-        selected_cards.cards.clear();
-        room.send(PlayerCommand {
-            action: ActionType::PickupPile,
-            data: None,
-        });
-    }
-}
-
 pub fn monitor_lp_inputs(
     button: Res<ButtonInput<KeyCode>>,
     mut card_pile: ResMut<Pile>,
     mut card_deck: ResMut<CardDeck>,
+    mut dead_cards: ResMut<DeadCards>,
     local_players: Res<LocalPlayers>,
     mut players: Query<&mut Player>,
     mut player_turn: ResMut<PlayerTurn>,
@@ -536,15 +477,87 @@ pub fn monitor_lp_inputs(
         if card_pile.cards.is_empty()
             || selected_cards.value().expect("no selected cards found")
                 >= card_pile.cards.last().unwrap().number
+            || selected_cards.value().unwrap() == CardVal::Two
+            || selected_cards.value().unwrap() == CardVal::Ten
         {
             play_cards(
                 &mut card_pile,
+                &mut dead_cards,
                 &mut player,
                 &mut player_turn,
                 Some(&mut room),
                 &mut selected_cards.cards,
             );
         }
+    }
+}
+
+pub fn play_cards(
+    card_pile: &mut Pile,
+    dead_cards: &mut DeadCards,
+    player: &mut Player,
+    player_turn: &mut PlayerTurn,
+    room: Option<&mut GameRoom>,
+    selected_cards: &mut HashSet<Card>,
+) {
+    if let Some(room) = room {
+        // sending from LocalPlayer
+        let cmd = PlayerCommand {
+            action: ActionType::PlayCards,
+            data: Some(
+                selected_cards
+                    .clone()
+                    .iter()
+                    .copied()
+                    .map(|c| c.to_num())
+                    .collect::<Vec<u8>>(),
+            ),
+        };
+        room.send(cmd);
+    }
+
+    // play cards
+    for card in selected_cards.clone() {
+        card_pile.cards.push(card);
+    }
+    for card in selected_cards.iter() {
+        player.hand.remove(&card);
+    }
+
+    if selected_cards.iter().next().unwrap().number == CardVal::Two
+    {
+        // Two
+        selected_cards.clear();
+    } else if selected_cards.iter().next().unwrap().number == CardVal::Ten {
+        // Ten
+        blowup_pile(card_pile, dead_cards);
+        selected_cards.clear();
+    } else {
+        // Others
+        selected_cards.clear();
+        player_turn.next();
+    }
+}
+
+pub fn pickup_pile(
+    card_pile: &mut Pile,
+    player: &mut Player,
+    player_turn: &mut PlayerTurn,
+    room: Option<&mut GameRoom>,
+    selected_cards: &mut SelectedCards,
+) {
+    for card in card_pile.cards.clone() {
+        player.hand.insert(card);
+    }
+    card_pile.cards.clear();
+    player_turn.next();
+
+    if let Some(room) = room {
+        selected_cards.cards.clear();
+        room.send(PlayerCommand {
+            action: ActionType::PickupPile,
+            data: None,
+        });
     }
 }
 
@@ -567,4 +580,11 @@ pub fn pickup_deck(
             data: None,
         });
     }
+}
+
+pub fn blowup_pile(card_pile: &mut Pile, dead_cards: &mut DeadCards) {
+    for card in card_pile.cards.iter() {
+        dead_cards.cards.insert(*card);
+    }
+    card_pile.cards.clear();
 }
