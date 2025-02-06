@@ -16,30 +16,4 @@ rand_xoshiro = "0.7.0"
 wasm-bindgen = { version = "0.2.100" }
 serde = "1.0.217"
 bitcode = "0.6.3"
-
-[target.wasm32-unknown-unknown]
-runner = "wasm-server-runner"
-rustflags = ["--cfg=web_sys_unstable_apis"]
-opt-level = "s"
-# lto = "thin"
-
-[profile.dev.package."*"]
-opt-level = 3
-
-[profile.dev]
-opt-level = 1
-
-[profile.release]
-opt-level = 's'
-lto = "thin"
-codegen-units = 1
-
-[profile.wasm-release]
-# Default to release profile values.
-inherits = "release"
-# Optimize with size in mind (also try "z", sometimes it is better).
-# Slightly slows compile times, great improvements to file size and runtime performance.
-opt-level = "z"
-# lto = "thin"
-# Strip all debugging information from the binary to slightly reduce file size.
-strip = "debuginfo"
+    
